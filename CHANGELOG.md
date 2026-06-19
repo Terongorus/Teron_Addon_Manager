@@ -1,0 +1,29 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+Versions follow major.minor.hotfix (e.g. 1.2.3).
+
+## [Unreleased]
+
+## [0.1.1] - 2026-06-20
+
+### Fixed
+
+- Removing or updating an addon no longer crashes the app when its files are marked read-only (preserved from the source archive, or set by other addon-management tools) — the read-only attribute is now cleared before deleting, and cleared on copy so addons installed going forward don't pick it back up.
+- "Remove Selected" now catches per-addon failures and reports them in a dialog instead of letting an unhandled exception crash the app.
+
+## [0.1.0] - 2026-06-20
+
+### Added
+
+- Add an addon by pasting a web link to its page or archive. Supported sources: ESOUI (via the `api.mmoui.com` file-details API), GitHub Releases, and a generic fallback that treats any other URL as a direct archive download.
+- Download and extract an addon's archive into the correct ESO `AddOns` folder, auto-detecting whether **Live** and/or **PTR** installations exist (`Documents\Elder Scrolls Online\<live|ptr>\AddOns\`), with a left-side list to switch between them like tabs.
+- Track installed addons (version, content hash, installed folders) in a local library file (`%AppData%\Teron_Addon_Manager\addons.json`) so updates can be detected later.
+- Check installed addons against their source for updates, automatically on startup and on demand, using content-hash comparison where available and falling back to version-string comparison.
+- Add, update, or remove installed addons from the main window via a toolbar of actions (Add Addon, Check for Updates, Update Selected, Remove Selected, Open AddOns Folder).
+
+### Security
+
+- Sanitize the addon name before using it as a folder name when an archive places files at its root instead of inside a named folder. The name comes from the source's API response, so without sanitizing it, a malicious listing could have supplied a name like `../../../Startup` to write outside the intended folder.

@@ -1,16 +1,26 @@
-﻿namespace Teron_Addon_Manager
+namespace Teron_Addon_Manager
 {
     partial class Addon_Manager
     {
-        /// <summary>
-        ///  Required designer variable.
-        /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        private System.ComponentModel.IContainer components = null!;
+        private ToolStrip toolStrip;
+        private ToolStripMenuItem addAddonMenuItem;
+        private ToolStripMenuItem checkUpdatesMenuItem;
+        private ToolStripMenuItem updateSelectedMenuItem;
+        private ToolStripMenuItem removeSelectedMenuItem;
+        private ToolStripMenuItem openFolderMenuItem;
+        private Panel targetPanel;
+        private Label targetHeaderLabel;
+        private ListBox targetListBox;
+        private ListView addonListView;
+        private ColumnHeader nameColumn;
+        private ColumnHeader installedColumn;
+        private ColumnHeader latestColumn;
+        private ColumnHeader statusColumn;
+        private ColumnHeader sourceColumn;
+        private StatusStrip statusStrip;
+        private ToolStripStatusLabel statusLabel;
 
-        /// <summary>
-        ///  Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -20,57 +30,157 @@
             base.Dispose(disposing);
         }
 
-        #region Windows Form Designer generated code
-
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
-            tableLayoutPanel1 = new TableLayoutPanel();
-            listBox1 = new ListBox();
-            tableLayoutPanel1.SuspendLayout();
+            toolStrip = new ToolStrip();
+            addAddonMenuItem = new ToolStripMenuItem();
+            checkUpdatesMenuItem = new ToolStripMenuItem();
+            updateSelectedMenuItem = new ToolStripMenuItem();
+            removeSelectedMenuItem = new ToolStripMenuItem();
+            openFolderMenuItem = new ToolStripMenuItem();
+            targetPanel = new Panel();
+            targetHeaderLabel = new Label();
+            targetListBox = new ListBox();
+            addonListView = new ListView();
+            nameColumn = new ColumnHeader();
+            installedColumn = new ColumnHeader();
+            latestColumn = new ColumnHeader();
+            statusColumn = new ColumnHeader();
+            sourceColumn = new ColumnHeader();
+            statusStrip = new StatusStrip();
+            statusLabel = new ToolStripStatusLabel();
+            targetPanel.SuspendLayout();
+            statusStrip.SuspendLayout();
             SuspendLayout();
-            // 
-            // tableLayoutPanel1
-            // 
-            tableLayoutPanel1.ColumnCount = 2;
-            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-            tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-            tableLayoutPanel1.Controls.Add(listBox1, 0, 0);
-            tableLayoutPanel1.Dock = DockStyle.Fill;
-            tableLayoutPanel1.Location = new Point(0, 0);
-            tableLayoutPanel1.Name = "tableLayoutPanel1";
-            tableLayoutPanel1.RowCount = 2;
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-            tableLayoutPanel1.Size = new Size(800, 450);
-            tableLayoutPanel1.TabIndex = 0;
-            // 
-            // listBox1
-            // 
-            listBox1.FormattingEnabled = true;
-            listBox1.Location = new Point(3, 3);
-            listBox1.Name = "listBox1";
-            listBox1.Size = new Size(120, 94);
-            listBox1.TabIndex = 0;
-            // 
+            //
+            // toolStrip
+            //
+            toolStrip.Items.Add(addAddonMenuItem);
+            toolStrip.Items.Add(checkUpdatesMenuItem);
+            toolStrip.Items.Add(updateSelectedMenuItem);
+            toolStrip.Items.Add(removeSelectedMenuItem);
+            toolStrip.Items.Add(openFolderMenuItem);
+            toolStrip.Name = "toolStrip";
+            toolStrip.GripStyle = ToolStripGripStyle.Hidden;
+            toolStrip.Size = new Size(800, 25);
+            //
+            // addAddonMenuItem
+            //
+            addAddonMenuItem.Name = "addAddonMenuItem";
+            addAddonMenuItem.Text = "Add Addon...";
+            //
+            // checkUpdatesMenuItem
+            //
+            checkUpdatesMenuItem.Name = "checkUpdatesMenuItem";
+            checkUpdatesMenuItem.Text = "Check for Updates";
+            //
+            // updateSelectedMenuItem
+            //
+            updateSelectedMenuItem.Name = "updateSelectedMenuItem";
+            updateSelectedMenuItem.Text = "Update Selected";
+            //
+            // removeSelectedMenuItem
+            //
+            removeSelectedMenuItem.Name = "removeSelectedMenuItem";
+            removeSelectedMenuItem.Text = "Remove Selected";
+            //
+            // openFolderMenuItem
+            //
+            openFolderMenuItem.Name = "openFolderMenuItem";
+            openFolderMenuItem.Text = "Open AddOns Folder";
+            //
+            // targetPanel
+            //
+            targetPanel.Controls.Add(targetListBox);
+            targetPanel.Controls.Add(targetHeaderLabel);
+            targetPanel.Dock = DockStyle.Left;
+            targetPanel.Name = "targetPanel";
+            targetPanel.Padding = new Padding(4);
+            targetPanel.Size = new Size(150, 379);
+            //
+            // targetHeaderLabel
+            //
+            targetHeaderLabel.Dock = DockStyle.Top;
+            targetHeaderLabel.Padding = new Padding(2, 4, 2, 4);
+            targetHeaderLabel.Name = "targetHeaderLabel";
+            targetHeaderLabel.Size = new Size(142, 23);
+            targetHeaderLabel.Text = "Game Version";
+            //
+            // targetListBox
+            //
+            targetListBox.Dock = DockStyle.Fill;
+            targetListBox.IntegralHeight = false;
+            targetListBox.Name = "targetListBox";
+            targetListBox.Size = new Size(142, 348);
+            //
+            // addonListView
+            //
+            addonListView.Columns.AddRange(new ColumnHeader[] { nameColumn, installedColumn, latestColumn, statusColumn, sourceColumn });
+            addonListView.Dock = DockStyle.Fill;
+            addonListView.FullRowSelect = true;
+            addonListView.GridLines = true;
+            addonListView.MultiSelect = true;
+            addonListView.Name = "addonListView";
+            addonListView.Size = new Size(650, 379);
+            addonListView.UseCompatibleStateImageBehavior = false;
+            addonListView.View = View.Details;
+            //
+            // nameColumn
+            //
+            nameColumn.Text = "Name";
+            nameColumn.Width = 220;
+            //
+            // installedColumn
+            //
+            installedColumn.Text = "Installed";
+            installedColumn.Width = 110;
+            //
+            // latestColumn
+            //
+            latestColumn.Text = "Latest";
+            latestColumn.Width = 110;
+            //
+            // statusColumn
+            //
+            statusColumn.Text = "Status";
+            statusColumn.Width = 120;
+            //
+            // sourceColumn
+            //
+            sourceColumn.Text = "Source";
+            sourceColumn.Width = 100;
+            //
+            // statusStrip
+            //
+            statusStrip.Items.Add(statusLabel);
+            statusStrip.Name = "statusStrip";
+            statusStrip.Size = new Size(800, 22);
+            //
+            // statusLabel
+            //
+            statusLabel.Name = "statusLabel";
+            statusLabel.Size = new Size(785, 17);
+            statusLabel.Spring = true;
+            statusLabel.Text = "Ready.";
+            statusLabel.TextAlign = ContentAlignment.MiddleLeft;
+            //
             // Addon_Manager
-            // 
+            //
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
-            Controls.Add(tableLayoutPanel1);
+            Controls.Add(addonListView);
+            Controls.Add(targetPanel);
+            Controls.Add(statusStrip);
+            Controls.Add(toolStrip);
+            MinimumSize = new Size(640, 360);
             Name = "Addon_Manager";
-            Text = "Form1";
-            tableLayoutPanel1.ResumeLayout(false);
+            Text = "Teron Addon Manager";
+            targetPanel.ResumeLayout(false);
+            statusStrip.ResumeLayout(false);
+            statusStrip.PerformLayout();
             ResumeLayout(false);
+            PerformLayout();
         }
-
-        #endregion
-
-        private TableLayoutPanel tableLayoutPanel1;
-        private ListBox listBox1;
     }
 }
