@@ -1,5 +1,10 @@
 namespace Teron_Addon_Manager
 {
+    internal static class Globals
+    {
+        public static Font default_font = new Font("Segoe UI", 10F);
+    }
+
     internal static class Program
     {
         /// <summary>
@@ -11,7 +16,7 @@ namespace Teron_Addon_Manager
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            Application.SetDefaultFont(new Font("Segoe UI", 10F));
+            Application.SetDefaultFont(Globals.default_font);
             Application.Run(new Addon_Manager());
         }
     }
