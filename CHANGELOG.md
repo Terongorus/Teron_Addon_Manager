@@ -7,6 +7,12 @@ Versions follow major.minor.hotfix (e.g. 1.2.3).
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-06-20
+
+### Changed
+
+- Renamed the "Add Addon..." toolbar action to "Manual Add Addon..." to distinguish it from installing through the marketplace, and reordered the toolbar so Check for Updates, Update Selected, and Remove Selected come before it.
+
 ## [0.2.1] - 2026-06-20
 
 ### Added
