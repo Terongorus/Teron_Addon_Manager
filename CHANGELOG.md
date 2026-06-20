@@ -7,6 +7,16 @@ Versions follow major.minor.hotfix (e.g. 1.2.3).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-20
+
+### Added
+
+- Addon details now include the addon's full "Addon Info" description from ESOUI, converted from its BBCode formatting into plain text. Inline screenshots render as actual images instead of raw links, left-aligned and borderless to match the surrounding text — click one to open it in an enlarged preview window.
+
+### Fixed
+
+- Long descriptions could get cut off partway through with no way to scroll down to see the rest, because the scrollable area's size wasn't always recalculated once every screenshot and wrapped paragraph had finished sizing itself. The dialog now stays in sync as that content settles, so the full description is always reachable.
+
 ## [0.2.2] - 2026-06-20
 
 ### Changed

@@ -17,15 +17,20 @@ namespace Teron_Addon_Manager.Sources
                 && InfoIdPattern.IsMatch(url.AbsolutePath);
         }
 
-        public async Task<AddonManifest> ResolveAsync(Uri url, HttpClient http, CancellationToken ct)
+        public static string? ExtractId(Uri url)
         {
             var match = InfoIdPattern.Match(url.AbsolutePath);
-            if (!match.Success)
-            {
-                throw new InvalidOperationException($"Could not extract an ESOUI addon id from '{url}'.");
-            }
+            return match.Success ? match.Groups[1].Value : null;
+        }
 
-            var id = match.Groups[1].Value;
+        public static async Task<string?> FetchDescriptionAsync(string id, HttpClient http, CancellationToken ct)
+        {
+            var element = await FetchFileDetailsAsync(id, http, ct).ConfigureAwait(false);
+            return element.TryGetProperty("UIDescription", out var descriptionProp) ? descriptionProp.GetString() : null;
+        }
+
+        private static async Task<JsonElement> FetchFileDetailsAsync(string id, HttpClient http, CancellationToken ct)
+        {
             var apiUrl = $"https://api.mmoui.com/v3/game/ESO/filedetails/{id}.json";
 
             using var response = await http.GetAsync(apiUrl, ct).ConfigureAwait(false);
@@ -43,6 +48,14 @@ namespace Teron_Addon_Manager.Sources
                 }
                 element = element[0];
             }
+
+            return element.Clone();
+        }
+
+        public async Task<AddonManifest> ResolveAsync(Uri url, HttpClient http, CancellationToken ct)
+        {
+            var id = ExtractId(url) ?? throw new InvalidOperationException($"Could not extract an ESOUI addon id from '{url}'.");
+            var element = await FetchFileDetailsAsync(id, http, ct).ConfigureAwait(false);
 
             var name = element.GetProperty("UIName").GetString() ?? $"ESOUI Addon {id}";
             var version = element.TryGetProperty("UIVersion", out var versionProp) ? versionProp.GetString() ?? "" : "";

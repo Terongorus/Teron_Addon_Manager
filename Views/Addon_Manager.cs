@@ -80,7 +80,7 @@ namespace Teron_Addon_Manager
             hit.Item.Focused = true;
         }
 
-        private void ViewDetailsContextItem_Click(object? sender, EventArgs e)
+        private async void ViewDetailsContextItem_Click(object? sender, EventArgs e)
         {
             var addon = SelectedAddons().FirstOrDefault();
             if (addon is null)
@@ -103,7 +103,25 @@ namespace Teron_Addon_Manager
                 ("Folders", string.Join(", ", addon.FolderNames))
             };
 
-            using var dialog = new AddonDetailsDialog(addon.Name, $"{addon.SourceKind} addon", fields);
+            string? description = null;
+            if (addon.SourceKind == AddonSourceKind.EsoUi && EsoUiAddonSource.ExtractId(new Uri(addon.SourceUrl)) is { } id)
+            {
+                SetBusy(true, "Loading addon description...");
+                try
+                {
+                    description = await EsoUiAddonSource.FetchDescriptionAsync(id, _http, CancellationToken.None).ConfigureAwait(true);
+                }
+                catch (Exception ex)
+                {
+                    SetStatus($"Could not load addon description: {ex.Message}");
+                }
+                finally
+                {
+                    SetBusy(false);
+                }
+            }
+
+            using var dialog = new AddonDetailsDialog(addon.Name, $"{addon.SourceKind} addon", fields, description);
             dialog.ShowDialog(this);
         }
 

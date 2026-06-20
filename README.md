@@ -11,7 +11,7 @@ It currently focuses on [ESOUI](https://www.esoui.com/), with GitHub Releases an
 - **Update tracking** — installed addons are checked against their source automatically on startup and on demand, using a content-hash comparison where the source provides one (ESOUI), falling back to version-string comparison otherwise (GitHub, direct links).
 - **Local addon detection** — addons you installed by hand before ever using this tool are detected by matching their folder name against ESOUI's addon catalog, with a review dialog to choose which ones to start tracking. Runs automatically on startup and on demand via "Scan for Local Addons...".
 - **ESOUI marketplace browser** — browse ESOUI's full addon catalog from inside the app ("Browse Addons..."), with search by name/author, a category filter, and sorting by name, last updated, or downloads. Install straight from the results.
-- **Addon details** — right-click any addon (installed or in the marketplace) for a details view: version, source, content hash, install folders, and a clickable link back to its page.
+- **Addon details** — right-click any addon (installed or in the marketplace) for a details view: version, source, content hash, install folders, a clickable link back to its page, and (for ESOUI addons) the full "Addon Info" description with inline screenshots you can click to enlarge.
 - **Bulk actions** — multi-select with Ctrl+click, Shift+click, or Ctrl+A, then Update, Remove, or Check for Updates on the whole selection at once.
 
 ## Requirements

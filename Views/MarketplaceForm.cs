@@ -1,5 +1,6 @@
 using Teron_Addon_Manager.Models;
 using Teron_Addon_Manager.Services;
+using Teron_Addon_Manager.Sources;
 
 namespace Teron_Addon_Manager
 {
@@ -66,7 +67,7 @@ namespace Teron_Addon_Manager
             hit.Item.Focused = true;
         }
 
-        private void ViewDetailsContextItem_Click(object? sender, EventArgs e)
+        private async void ViewDetailsContextItem_Click(object? sender, EventArgs e)
         {
             var entry = resultsListView.SelectedItems.Cast<ListViewItem>().Select(i => (EsoUiCatalogEntry)i.Tag!).FirstOrDefault();
             if (entry is null)
@@ -87,7 +88,22 @@ namespace Teron_Addon_Manager
                 ("Page", entry.FileInfoUri)
             };
 
-            using var dialog = new AddonDetailsDialog(entry.Title, "ESOUI marketplace listing", fields);
+            string? description = null;
+            SetBusy(true, "Loading addon description...");
+            try
+            {
+                description = await EsoUiAddonSource.FetchDescriptionAsync(entry.Id.ToString(), _http, CancellationToken.None).ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                statusLabel.Text = $"Could not load addon description: {ex.Message}";
+            }
+            finally
+            {
+                SetBusy(false);
+            }
+
+            using var dialog = new AddonDetailsDialog(entry.Title, "ESOUI marketplace listing", fields, description);
             dialog.ShowDialog(this);
         }
 
