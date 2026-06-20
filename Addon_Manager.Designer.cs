@@ -22,6 +22,11 @@ namespace Teron_Addon_Manager
         private ColumnHeader sourceColumn;
         private StatusStrip statusStrip;
         private ToolStripStatusLabel statusLabel;
+        private ContextMenuStrip addonContextMenu;
+        private ToolStripMenuItem viewDetailsContextItem;
+        private ToolStripMenuItem checkSelectedContextItem;
+        private ToolStripMenuItem updateSelectedContextItem;
+        private ToolStripMenuItem removeSelectedContextItem;
 
         protected override void Dispose(bool disposing)
         {
@@ -53,8 +58,14 @@ namespace Teron_Addon_Manager
             sourceColumn = new ColumnHeader();
             statusStrip = new StatusStrip();
             statusLabel = new ToolStripStatusLabel();
+            addonContextMenu = new ContextMenuStrip();
+            viewDetailsContextItem = new ToolStripMenuItem();
+            checkSelectedContextItem = new ToolStripMenuItem();
+            updateSelectedContextItem = new ToolStripMenuItem();
+            removeSelectedContextItem = new ToolStripMenuItem();
             targetPanel.SuspendLayout();
             statusStrip.SuspendLayout();
+            addonContextMenu.SuspendLayout();
             SuspendLayout();
             //
             // toolStrip
@@ -140,6 +151,7 @@ namespace Teron_Addon_Manager
             addonListView.Size = new Size(650, 379);
             addonListView.UseCompatibleStateImageBehavior = false;
             addonListView.View = View.Details;
+            addonListView.ContextMenuStrip = addonContextMenu;
             //
             // nameColumn
             //
@@ -180,6 +192,35 @@ namespace Teron_Addon_Manager
             statusLabel.Text = "Ready.";
             statusLabel.TextAlign = ContentAlignment.MiddleLeft;
             //
+            // addonContextMenu
+            //
+            addonContextMenu.Items.Add(viewDetailsContextItem);
+            addonContextMenu.Items.Add(new ToolStripSeparator());
+            addonContextMenu.Items.Add(checkSelectedContextItem);
+            addonContextMenu.Items.Add(updateSelectedContextItem);
+            addonContextMenu.Items.Add(removeSelectedContextItem);
+            addonContextMenu.Name = "addonContextMenu";
+            //
+            // viewDetailsContextItem
+            //
+            viewDetailsContextItem.Name = "viewDetailsContextItem";
+            viewDetailsContextItem.Text = "View Details...";
+            //
+            // checkSelectedContextItem
+            //
+            checkSelectedContextItem.Name = "checkSelectedContextItem";
+            checkSelectedContextItem.Text = "Check for Updates";
+            //
+            // updateSelectedContextItem
+            //
+            updateSelectedContextItem.Name = "updateSelectedContextItem";
+            updateSelectedContextItem.Text = "Update";
+            //
+            // removeSelectedContextItem
+            //
+            removeSelectedContextItem.Name = "removeSelectedContextItem";
+            removeSelectedContextItem.Text = "Remove";
+            //
             // Addon_Manager
             //
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -195,6 +236,7 @@ namespace Teron_Addon_Manager
             targetPanel.ResumeLayout(false);
             statusStrip.ResumeLayout(false);
             statusStrip.PerformLayout();
+            addonContextMenu.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }

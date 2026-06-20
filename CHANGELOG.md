@@ -7,6 +7,18 @@ Versions follow major.minor.hotfix (e.g. 1.2.3).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-20
+
+### Added
+
+- Select all addons in either list with Ctrl+A.
+- Right-click context menu on each addon: in the main window, View Details, Check for Updates, Update, and Remove; in the marketplace, View Details and Install Selected. "View Details" opens a new dialog with a bold title/subtitle header, a clean two-column field grid, and clickable links for URL fields, instead of a flat block of text.
+- Slightly larger default UI font for readability.
+
+### Fixed
+
+- Two tracked addons could end up claiming the same AddOns folder (e.g. if a local-scan match shifted to a different ESOUI listing on a later run, or a marketplace install overwrote a folder another tracked addon already owned). Conflicting adoptions are now skipped and reported instead of silently duplicated; a conflicting marketplace install now replaces the existing tracked entry instead of duplicating it.
+
 ## [0.2.0] - 2026-06-20
 
 ### Added

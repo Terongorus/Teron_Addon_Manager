@@ -37,6 +37,96 @@ namespace Teron_Addon_Manager
             browseMarketplaceMenuItem.Click += BrowseMarketplaceMenuItem_Click;
             openFolderMenuItem.Click += OpenFolderButton_Click;
             Load += Addon_Manager_Load;
+
+            addonListView.MouseDown += AddonListView_MouseDown;
+            addonListView.KeyDown += AddonListView_KeyDown;
+            viewDetailsContextItem.Click += ViewDetailsContextItem_Click;
+            checkSelectedContextItem.Click += CheckSelectedContextItem_Click;
+            updateSelectedContextItem.Click += UpdateSelectedButton_Click;
+            removeSelectedContextItem.Click += RemoveSelectedButton_Click;
+        }
+
+        private void AddonListView_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.A)
+            {
+                foreach (ListViewItem item in addonListView.Items)
+                {
+                    item.Selected = true;
+                }
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void AddonListView_MouseDown(object? sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right)
+            {
+                return;
+            }
+
+            var hit = addonListView.HitTest(e.Location);
+            if (hit.Item is null || hit.Item.Selected)
+            {
+                return;
+            }
+
+            foreach (ListViewItem selected in addonListView.SelectedItems.Cast<ListViewItem>().ToList())
+            {
+                selected.Selected = false;
+            }
+            hit.Item.Selected = true;
+            hit.Item.Focused = true;
+        }
+
+        private void ViewDetailsContextItem_Click(object? sender, EventArgs e)
+        {
+            var addon = SelectedAddons().FirstOrDefault();
+            if (addon is null)
+            {
+                return;
+            }
+
+            var fields = new List<(string Label, string Value)>
+            {
+                ("Game Version", DisplayName(addon.Target)),
+                ("Source", addon.SourceKind.ToString()),
+                ("Source URL", addon.SourceUrl),
+                ("Installed Version", addon.InstalledVersion),
+                ("Latest Version", addon.LatestVersion ?? "(not checked)"),
+                ("Status", StatusText(addon)),
+                ("Content Hash", addon.ContentHash ?? "(none)"),
+                ("Installed At", addon.InstalledAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")),
+                ("Last Checked", addon.LastChecked is { } lastChecked ? lastChecked.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "(never)"),
+                ("Last Check Error", addon.LastCheckError ?? "(none)"),
+                ("Folders", string.Join(", ", addon.FolderNames))
+            };
+
+            using var dialog = new AddonDetailsDialog(addon.Name, $"{addon.SourceKind} addon", fields);
+            dialog.ShowDialog(this);
+        }
+
+        private async void CheckSelectedContextItem_Click(object? sender, EventArgs e)
+        {
+            var selected = SelectedAddons().ToList();
+            if (selected.Count == 0)
+            {
+                return;
+            }
+
+            SetBusy(true, "Checking selected addons for updates...");
+            try
+            {
+                await _updateChecker.CheckAllAsync(selected, CancellationToken.None);
+                AddonLibrary.Save(_addons);
+                RefreshListView();
+                SetStatus($"Checked {selected.Count} addon(s) for updates.");
+            }
+            finally
+            {
+                SetBusy(false);
+            }
         }
 
         private static string DisplayName(GameTarget target) => target == GameTarget.Ptr ? "ESO PTR" : "ESO Live";
@@ -252,9 +342,17 @@ namespace Teron_Addon_Manager
                     return;
                 }
 
+                var adopted = new List<string>();
+                var skipped = new List<string>();
                 foreach (var candidate in dialog.AdoptedCandidates)
                 {
                     var entry = candidate.CatalogEntry!;
+                    if (TryFindFolderConflict(target, candidate.FolderNames, out var conflictFolder))
+                    {
+                        skipped.Add($"{entry.Title} (folder '{conflictFolder}' is already tracked by another addon)");
+                        continue;
+                    }
+
                     _addons.Add(new InstalledAddon
                     {
                         Name = entry.Title,
@@ -265,12 +363,21 @@ namespace Teron_Addon_Manager
                         FolderNames = candidate.FolderNames,
                         InstalledAt = DateTimeOffset.UtcNow
                     });
+                    adopted.Add(entry.Title);
                 }
 
                 AddonLibrary.Save(_addons);
                 RefreshListView();
-                SetStatus($"Adopted {dialog.AdoptedCandidates.Count} local addon(s).");
-                await RunUpdateCheckAsync();
+                SetStatus(adopted.Count > 0 ? $"Adopted {adopted.Count} local addon(s)." : "No addons adopted.");
+                if (skipped.Count > 0)
+                {
+                    MessageBox.Show(this, $"Skipped (already tracked):{Environment.NewLine}{string.Join(Environment.NewLine, skipped)}",
+                        "Scan for Local Addons", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                if (adopted.Count > 0)
+                {
+                    await RunUpdateCheckAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -300,6 +407,21 @@ namespace Teron_Addon_Manager
                     try
                     {
                         var addon = await _installer.InstallAsync(new Uri(entry.FileInfoUri), target, new Progress<string>(SetStatus), CancellationToken.None);
+
+                        // The install already wrote addon.FolderNames to disk, possibly overwriting a folder some
+                        // other tracked addon claims. Re-point tracking to the new source rather than duplicate it.
+                        if (TryFindFolderConflict(target, addon.FolderNames, out _, excluding: null))
+                        {
+                            var replaced = _addons.Where(a => a.Target == target && a.FolderNames.Intersect(addon.FolderNames, StringComparer.OrdinalIgnoreCase).Any()).ToList();
+                            foreach (var old in replaced)
+                            {
+                                _addons.Remove(old);
+                            }
+                            MessageBox.Show(this,
+                                $"'{entry.Title}' shares a folder with {string.Join(", ", replaced.Select(a => a.Name))}, which was already tracked. Replaced it with the marketplace install.",
+                                "Install", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+
                         _addons.Add(addon);
                     }
                     catch (Exception ex)
@@ -315,6 +437,15 @@ namespace Teron_Addon_Manager
             {
                 SetBusy(false);
             }
+        }
+
+        private bool TryFindFolderConflict(GameTarget target, IEnumerable<string> folderNames, out string? conflictFolder, InstalledAddon? excluding = null)
+        {
+            var tracked = new HashSet<string>(
+                _addons.Where(a => a.Target == target && a != excluding).SelectMany(a => a.FolderNames),
+                StringComparer.OrdinalIgnoreCase);
+            conflictFolder = folderNames.FirstOrDefault(tracked.Contains);
+            return conflictFolder is not null;
         }
 
         private void OpenFolderButton_Click(object? sender, EventArgs e)
@@ -336,6 +467,9 @@ namespace Teron_Addon_Manager
             removeSelectedMenuItem.Enabled = !busy;
             scanLocalMenuItem.Enabled = !busy;
             browseMarketplaceMenuItem.Enabled = !busy;
+            checkSelectedContextItem.Enabled = !busy;
+            updateSelectedContextItem.Enabled = !busy;
+            removeSelectedContextItem.Enabled = !busy;
             targetListBox.Enabled = !busy;
             if (status is not null)
             {

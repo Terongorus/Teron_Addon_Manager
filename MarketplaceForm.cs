@@ -25,7 +25,70 @@ namespace Teron_Addon_Manager
             sortComboBox.SelectedIndexChanged += (_, _) => ApplyFilters();
             refreshMenuItem.Click += async (_, _) => await LoadCatalogAsync(forceRefresh: true);
             installButton.Click += InstallButton_Click;
+            installContextItem.Click += InstallButton_Click;
+            viewDetailsContextItem.Click += ViewDetailsContextItem_Click;
+            resultsListView.MouseDown += ResultsListView_MouseDown;
+            resultsListView.KeyDown += ResultsListView_KeyDown;
             Load += async (_, _) => await LoadCatalogAsync(forceRefresh: false);
+        }
+
+        private void ResultsListView_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.A)
+            {
+                foreach (ListViewItem item in resultsListView.Items)
+                {
+                    item.Selected = true;
+                }
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void ResultsListView_MouseDown(object? sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right)
+            {
+                return;
+            }
+
+            var hit = resultsListView.HitTest(e.Location);
+            if (hit.Item is null || hit.Item.Selected)
+            {
+                return;
+            }
+
+            foreach (ListViewItem selected in resultsListView.SelectedItems.Cast<ListViewItem>().ToList())
+            {
+                selected.Selected = false;
+            }
+            hit.Item.Selected = true;
+            hit.Item.Focused = true;
+        }
+
+        private void ViewDetailsContextItem_Click(object? sender, EventArgs e)
+        {
+            var entry = resultsListView.SelectedItems.Cast<ListViewItem>().Select(i => (EsoUiCatalogEntry)i.Tag!).FirstOrDefault();
+            if (entry is null)
+            {
+                return;
+            }
+
+            var fields = new List<(string Label, string Value)>
+            {
+                ("Author", entry.Author),
+                ("Category", _categoryTitles.TryGetValue(entry.CategoryId, out var title) ? title : "(unknown)"),
+                ("Version", entry.Version),
+                ("Downloads", $"{entry.Downloads:N0} ({entry.DownloadsMonthly:N0} this month)"),
+                ("Favorites", entry.Favorites.ToString("N0")),
+                ("Last Updated", entry.LastUpdate is { } lastUpdate ? lastUpdate.ToLocalTime().ToString("yyyy-MM-dd") : "(unknown)"),
+                ("Library", entry.IsLibrary ? "Yes" : "No"),
+                ("Installs folders", entry.FolderPaths.Count > 0 ? string.Join(", ", entry.FolderPaths) : "(unknown)"),
+                ("Page", entry.FileInfoUri)
+            };
+
+            using var dialog = new AddonDetailsDialog(entry.Title, "ESOUI marketplace listing", fields);
+            dialog.ShowDialog(this);
         }
 
         private async Task LoadCatalogAsync(bool forceRefresh)
@@ -117,6 +180,7 @@ namespace Teron_Addon_Manager
         {
             UseWaitCursor = busy;
             installButton.Enabled = !busy;
+            installContextItem.Enabled = !busy;
             refreshMenuItem.Enabled = !busy;
             if (status is not null)
             {

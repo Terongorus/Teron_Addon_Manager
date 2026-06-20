@@ -22,6 +22,9 @@ namespace Teron_Addon_Manager
         private Button closeButton;
         private StatusStrip statusStrip;
         private ToolStripStatusLabel statusLabel;
+        private ContextMenuStrip resultsContextMenu;
+        private ToolStripMenuItem viewDetailsContextItem;
+        private ToolStripMenuItem installContextItem;
 
         protected override void Dispose(bool disposing)
         {
@@ -53,8 +56,12 @@ namespace Teron_Addon_Manager
             closeButton = new Button();
             statusStrip = new StatusStrip();
             statusLabel = new ToolStripStatusLabel();
+            resultsContextMenu = new ContextMenuStrip();
+            viewDetailsContextItem = new ToolStripMenuItem();
+            installContextItem = new ToolStripMenuItem();
             buttonPanel.SuspendLayout();
             statusStrip.SuspendLayout();
+            resultsContextMenu.SuspendLayout();
             SuspendLayout();
             //
             // toolStrip
@@ -120,6 +127,7 @@ namespace Teron_Addon_Manager
             resultsListView.Name = "resultsListView";
             resultsListView.UseCompatibleStateImageBehavior = false;
             resultsListView.View = View.Details;
+            resultsListView.ContextMenuStrip = resultsContextMenu;
             //
             // titleColumn
             //
@@ -187,6 +195,23 @@ namespace Teron_Addon_Manager
             statusLabel.Text = "Loading...";
             statusLabel.TextAlign = ContentAlignment.MiddleLeft;
             //
+            // resultsContextMenu
+            //
+            resultsContextMenu.Items.Add(viewDetailsContextItem);
+            resultsContextMenu.Items.Add(new ToolStripSeparator());
+            resultsContextMenu.Items.Add(installContextItem);
+            resultsContextMenu.Name = "resultsContextMenu";
+            //
+            // viewDetailsContextItem
+            //
+            viewDetailsContextItem.Name = "viewDetailsContextItem";
+            viewDetailsContextItem.Text = "View Details...";
+            //
+            // installContextItem
+            //
+            installContextItem.Name = "installContextItem";
+            installContextItem.Text = "Install Selected";
+            //
             // MarketplaceForm
             //
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -205,6 +230,7 @@ namespace Teron_Addon_Manager
             buttonPanel.PerformLayout();
             statusStrip.ResumeLayout(false);
             statusStrip.PerformLayout();
+            resultsContextMenu.ResumeLayout(false);
             ResumeLayout(false);
         }
     }
