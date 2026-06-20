@@ -12,6 +12,7 @@ namespace Teron_Addon_Manager
         private readonly AddonSourceResolver _resolver = new();
         private readonly AddonInstaller _installer;
         private readonly UpdateChecker _updateChecker;
+        private readonly EsoUiCatalogService _catalogService = new();
         private List<InstalledAddon> _addons = new();
 
         public Addon_Manager()
@@ -32,6 +33,8 @@ namespace Teron_Addon_Manager
             checkUpdatesMenuItem.Click += CheckUpdatesButton_Click;
             updateSelectedMenuItem.Click += UpdateSelectedButton_Click;
             removeSelectedMenuItem.Click += RemoveSelectedButton_Click;
+            scanLocalMenuItem.Click += ScanLocalMenuItem_Click;
+            browseMarketplaceMenuItem.Click += BrowseMarketplaceMenuItem_Click;
             openFolderMenuItem.Click += OpenFolderButton_Click;
             Load += Addon_Manager_Load;
         }
@@ -52,6 +55,7 @@ namespace Teron_Addon_Manager
             _addons = AddonLibrary.Load();
             RefreshListView();
             await RunUpdateCheckAsync();
+            await ScanForLocalAddonsAsync(isManualTrigger: false);
         }
 
         private void TargetListBox_SelectedIndexChanged(object? sender, EventArgs e) => RefreshListView();
@@ -218,6 +222,101 @@ namespace Teron_Addon_Manager
             }
         }
 
+        private async void ScanLocalMenuItem_Click(object? sender, EventArgs e) => await ScanForLocalAddonsAsync(isManualTrigger: true);
+
+        private async Task ScanForLocalAddonsAsync(bool isManualTrigger)
+        {
+            var target = SelectedTarget;
+            SetBusy(true, "Scanning for local addons...");
+            try
+            {
+                var catalog = await _catalogService.GetCatalogAsync(_http, CancellationToken.None).ConfigureAwait(true);
+                var folderIndex = EsoUiCatalogService.BuildFolderIndex(catalog);
+                var trackedFolders = _addons.Where(a => a.Target == target).SelectMany(a => a.FolderNames).ToList();
+
+                var candidates = LocalAddonScanner.Scan(target, trackedFolders, folderIndex);
+                if (candidates.Count == 0)
+                {
+                    SetStatus("No new local addons found.");
+                    if (isManualTrigger)
+                    {
+                        MessageBox.Show(this, "No unmanaged addon folders were found.", "Scan for Local Addons", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    return;
+                }
+
+                using var dialog = new ScanResultsDialog(candidates);
+                if (dialog.ShowDialog(this) != DialogResult.OK || dialog.AdoptedCandidates.Count == 0)
+                {
+                    SetStatus($"Found {candidates.Count} local addon(s); none adopted.");
+                    return;
+                }
+
+                foreach (var candidate in dialog.AdoptedCandidates)
+                {
+                    var entry = candidate.CatalogEntry!;
+                    _addons.Add(new InstalledAddon
+                    {
+                        Name = entry.Title,
+                        Target = target,
+                        SourceUrl = entry.FileInfoUri,
+                        SourceKind = AddonSourceKind.EsoUi,
+                        InstalledVersion = candidate.LocalVersion ?? entry.Version,
+                        FolderNames = candidate.FolderNames,
+                        InstalledAt = DateTimeOffset.UtcNow
+                    });
+                }
+
+                AddonLibrary.Save(_addons);
+                RefreshListView();
+                SetStatus($"Adopted {dialog.AdoptedCandidates.Count} local addon(s).");
+                await RunUpdateCheckAsync();
+            }
+            catch (Exception ex)
+            {
+                SetStatus($"Local addon scan failed: {ex.Message}");
+            }
+            finally
+            {
+                SetBusy(false);
+            }
+        }
+
+        private async void BrowseMarketplaceMenuItem_Click(object? sender, EventArgs e)
+        {
+            using var dialog = new MarketplaceForm(_http);
+            if (dialog.ShowDialog(this) != DialogResult.OK || dialog.SelectedAddons.Count == 0)
+            {
+                return;
+            }
+
+            var target = SelectedTarget;
+            SetBusy(true, "Installing from marketplace...");
+            try
+            {
+                foreach (var entry in dialog.SelectedAddons)
+                {
+                    SetStatus($"Installing {entry.Title}...");
+                    try
+                    {
+                        var addon = await _installer.InstallAsync(new Uri(entry.FileInfoUri), target, new Progress<string>(SetStatus), CancellationToken.None);
+                        _addons.Add(addon);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(this, $"Failed to install {entry.Title}: {ex.Message}", "Install failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                AddonLibrary.Save(_addons);
+                RefreshListView();
+                SetStatus($"Installed {dialog.SelectedAddons.Count} addon(s) from the marketplace.");
+            }
+            finally
+            {
+                SetBusy(false);
+            }
+        }
+
         private void OpenFolderButton_Click(object? sender, EventArgs e)
         {
             var target = SelectedTarget;
@@ -235,6 +334,8 @@ namespace Teron_Addon_Manager
             checkUpdatesMenuItem.Enabled = !busy;
             updateSelectedMenuItem.Enabled = !busy;
             removeSelectedMenuItem.Enabled = !busy;
+            scanLocalMenuItem.Enabled = !busy;
+            browseMarketplaceMenuItem.Enabled = !busy;
             targetListBox.Enabled = !busy;
             if (status is not null)
             {

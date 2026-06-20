@@ -8,6 +8,8 @@ namespace Teron_Addon_Manager
         private ToolStripMenuItem checkUpdatesMenuItem;
         private ToolStripMenuItem updateSelectedMenuItem;
         private ToolStripMenuItem removeSelectedMenuItem;
+        private ToolStripMenuItem scanLocalMenuItem;
+        private ToolStripMenuItem browseMarketplaceMenuItem;
         private ToolStripMenuItem openFolderMenuItem;
         private Panel targetPanel;
         private Label targetHeaderLabel;
@@ -37,6 +39,8 @@ namespace Teron_Addon_Manager
             checkUpdatesMenuItem = new ToolStripMenuItem();
             updateSelectedMenuItem = new ToolStripMenuItem();
             removeSelectedMenuItem = new ToolStripMenuItem();
+            scanLocalMenuItem = new ToolStripMenuItem();
+            browseMarketplaceMenuItem = new ToolStripMenuItem();
             openFolderMenuItem = new ToolStripMenuItem();
             targetPanel = new Panel();
             targetHeaderLabel = new Label();
@@ -59,6 +63,8 @@ namespace Teron_Addon_Manager
             toolStrip.Items.Add(checkUpdatesMenuItem);
             toolStrip.Items.Add(updateSelectedMenuItem);
             toolStrip.Items.Add(removeSelectedMenuItem);
+            toolStrip.Items.Add(scanLocalMenuItem);
+            toolStrip.Items.Add(browseMarketplaceMenuItem);
             toolStrip.Items.Add(openFolderMenuItem);
             toolStrip.Name = "toolStrip";
             toolStrip.GripStyle = ToolStripGripStyle.Hidden;
@@ -83,6 +89,16 @@ namespace Teron_Addon_Manager
             //
             removeSelectedMenuItem.Name = "removeSelectedMenuItem";
             removeSelectedMenuItem.Text = "Remove Selected";
+            //
+            // scanLocalMenuItem
+            //
+            scanLocalMenuItem.Name = "scanLocalMenuItem";
+            scanLocalMenuItem.Text = "Scan for Local Addons...";
+            //
+            // browseMarketplaceMenuItem
+            //
+            browseMarketplaceMenuItem.Name = "browseMarketplaceMenuItem";
+            browseMarketplaceMenuItem.Text = "Browse Addons...";
             //
             // openFolderMenuItem
             //

@@ -7,6 +7,13 @@ Versions follow major.minor.hotfix (e.g. 1.2.3).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-20
+
+### Added
+
+- Detect addons already installed manually in the AddOns folder and match them against the ESOUI catalog by folder name, with a review dialog to choose which ones to adopt for update tracking. Runs automatically on startup alongside the update check, and on demand via "Scan for Local Addons...".
+- Browse the full ESOUI addon catalog from within the app ("Browse Addons..."), with search by name/author, a category filter, and sort by name, last updated, or downloads. Installing from search results goes through the same install pipeline as "Add Addon".
+
 ## [0.1.1] - 2026-06-20
 
 ### Fixed
