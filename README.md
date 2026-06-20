@@ -43,7 +43,7 @@ The project is a standard .NET WinForms app (`net10.0-windows`) with no third-pa
 
 ## Project status
 
-Under active early development — see [CHANGELOG.md](CHANGELOG.md) for what's shipped so far. Versions follow `major.minor.hotfix`.
+Version 1.0.0 — first stable release. See [CHANGELOG.md](CHANGELOG.md) for the full history. Versions follow `major.minor.hotfix`.
 
 ## License
 

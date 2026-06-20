@@ -7,6 +7,12 @@ Versions follow major.minor.hotfix (e.g. 1.2.3).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-06-20
+
+### Changed
+
+- First stable release. Everything from 0.1.0 through 0.3.0 below makes up this release's feature set.
+
 ## [0.3.0] - 2026-06-20
 
 ### Added
