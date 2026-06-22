@@ -38,6 +38,7 @@ namespace Teron_Addon_Manager
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MarketplaceForm));
             toolStrip = new ToolStrip();
             searchLabel = new ToolStripLabel();
             searchTextBox = new ToolStripTextBox();
@@ -160,7 +161,7 @@ namespace Teron_Addon_Manager
             // 
             resultsContextMenu.Items.AddRange(new ToolStripItem[] { viewDetailsContextItem, installContextItem });
             resultsContextMenu.Name = "resultsContextMenu";
-            resultsContextMenu.Size = new Size(153, 54);
+            resultsContextMenu.Size = new Size(153, 48);
             // 
             // viewDetailsContextItem
             // 
@@ -235,6 +236,7 @@ namespace Teron_Addon_Manager
             Controls.Add(buttonPanel);
             Controls.Add(statusStrip);
             Controls.Add(toolStrip);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             MinimumSize = new Size(640, 360);
             Name = "MarketplaceForm";
             StartPosition = FormStartPosition.CenterParent;

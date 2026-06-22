@@ -20,6 +20,7 @@ namespace Teron_Addon_Manager
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AddonDetailsDialog));
             headerLabel = new Label();
             subtitleLabel = new Label();
             contentPanel = new Panel();
@@ -75,7 +76,7 @@ namespace Teron_Addon_Manager
             // 
             closeButton.AutoSize = true;
             closeButton.DialogResult = DialogResult.OK;
-            closeButton.Location = new Point(389, 12);
+            closeButton.Location = new Point(409, 12);
             closeButton.Margin = new Padding(8, 4, 0, 0);
             closeButton.Name = "closeButton";
             closeButton.Size = new Size(75, 27);
@@ -95,6 +96,7 @@ namespace Teron_Addon_Manager
             Controls.Add(buttonPanel);
             Controls.Add(subtitleLabel);
             Controls.Add(headerLabel);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             MinimumSize = new Size(380, 320);
             Name = "AddonDetailsDialog";
             StartPosition = FormStartPosition.CenterParent;

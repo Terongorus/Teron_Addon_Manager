@@ -40,11 +40,12 @@ namespace Teron_Addon_Manager
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Addon_Manager));
             toolStrip = new ToolStrip();
-            addAddonMenuItem = new ToolStripMenuItem();
             checkUpdatesMenuItem = new ToolStripMenuItem();
             updateSelectedMenuItem = new ToolStripMenuItem();
             removeSelectedMenuItem = new ToolStripMenuItem();
+            addAddonMenuItem = new ToolStripMenuItem();
             scanLocalMenuItem = new ToolStripMenuItem();
             browseMarketplaceMenuItem = new ToolStripMenuItem();
             openFolderMenuItem = new ToolStripMenuItem();
@@ -80,12 +81,6 @@ namespace Teron_Addon_Manager
             toolStrip.Size = new Size(800, 25);
             toolStrip.TabIndex = 4;
             // 
-            // addAddonMenuItem
-            // 
-            addAddonMenuItem.Name = "addAddonMenuItem";
-            addAddonMenuItem.Size = new Size(132, 25);
-            addAddonMenuItem.Text = "Manual Add Addon...";
-            // 
             // checkUpdatesMenuItem
             // 
             checkUpdatesMenuItem.Name = "checkUpdatesMenuItem";
@@ -103,6 +98,12 @@ namespace Teron_Addon_Manager
             removeSelectedMenuItem.Name = "removeSelectedMenuItem";
             removeSelectedMenuItem.Size = new Size(109, 25);
             removeSelectedMenuItem.Text = "Remove Selected";
+            // 
+            // addAddonMenuItem
+            // 
+            addAddonMenuItem.Name = "addAddonMenuItem";
+            addAddonMenuItem.Size = new Size(132, 25);
+            addAddonMenuItem.Text = "Manual Add Addon...";
             // 
             // scanLocalMenuItem
             // 
@@ -195,7 +196,7 @@ namespace Teron_Addon_Manager
             // 
             addonContextMenu.Items.AddRange(new ToolStripItem[] { viewDetailsContextItem, checkSelectedContextItem, updateSelectedContextItem, removeSelectedContextItem });
             addonContextMenu.Name = "addonContextMenu";
-            addonContextMenu.Size = new Size(172, 98);
+            addonContextMenu.Size = new Size(172, 92);
             // 
             // viewDetailsContextItem
             // 
@@ -246,6 +247,7 @@ namespace Teron_Addon_Manager
             Controls.Add(targetPanel);
             Controls.Add(statusStrip);
             Controls.Add(toolStrip);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             MinimumSize = new Size(640, 360);
             Name = "Addon_Manager";
             Text = "Teron Addon Manager";

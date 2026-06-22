@@ -7,11 +7,11 @@ It currently focuses on [ESOUI](https://www.esoui.com/), with GitHub Releases an
 ## Features
 
 - **Add an addon by URL** — paste a link to its ESOUI page, its GitHub repo, or a direct archive link, and the app resolves the real download, downloads it, and extracts it into the right `AddOns` folder.
-- **Live and PTR support** — auto-detects whether you have a Live and/or PTR installation (`Documents\Elder Scrolls Online\<live|ptr>\AddOns\`) and lets you switch between them from a list on the left, like switching tabs.
-- **Update tracking** — installed addons are checked against their source automatically on startup and on demand, using a content-hash comparison where the source provides one (ESOUI), falling back to version-string comparison otherwise (GitHub, direct links).
+- **Live and PTR support** — auto-detects whether you have a Live and/or PTR installation (`Documents\Elder Scrolls Online\<live|ptr>\AddOns\`) and lists only the ones that actually exist on the left, like switching tabs. The app never creates or deletes these folders itself — it only manages addons within installs the game has already set up.
+- **Update tracking** — installed addons are checked against their source automatically on startup and on demand, using a content-hash comparison where the source provides one (ESOUI), falling back to version-string comparison otherwise (GitHub, direct links). The Status column is color-coded so anything needing attention stands out.
 - **Local addon detection** — addons you installed by hand before ever using this tool are detected by matching their folder name against ESOUI's addon catalog, with a review dialog to choose which ones to start tracking. Runs automatically on startup and on demand via "Scan for Local Addons...".
 - **ESOUI marketplace browser** — browse ESOUI's full addon catalog from inside the app ("Browse Addons..."), with search by name/author, a category filter, and sorting by name, last updated, or downloads. Install straight from the results.
-- **Addon details** — right-click any addon (installed or in the marketplace) for a details view: version, source, content hash, install folders, a clickable link back to its page, and (for ESOUI addons) the full "Addon Info" description with inline screenshots you can click to enlarge.
+- **Addon details** — right-click any addon (installed or in the marketplace) for a details view: version, source, content hash, install folders, a clickable link back to its page, and (for ESOUI addons) the full "Addon Info" description rendered with real headings, lists, and code blocks rather than flattened text. Images can be clicked to enlarge, and the whole dialog reflows when resized or maximized.
 - **Bulk actions** — multi-select with Ctrl+click, Shift+click, or Ctrl+A, then Update, Remove, or Check for Updates on the whole selection at once.
 
 ## Requirements
@@ -43,7 +43,7 @@ The project is a standard .NET WinForms app (`net10.0-windows`) with no third-pa
 
 ## Project status
 
-Version 1.0.0 — first stable release. See [CHANGELOG.md](CHANGELOG.md) for the full history. Versions follow `major.minor.hotfix`.
+Version 1.1.0. See [CHANGELOG.md](CHANGELOG.md) for the full history. Versions follow `major.minor.hotfix`.
 
 ## License
 

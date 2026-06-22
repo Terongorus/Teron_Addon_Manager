@@ -6,14 +6,16 @@ namespace Teron_Addon_Manager
 {
     public partial class Addon_Manager : Form
     {
-        private static readonly GameTarget[] TargetsInDisplayOrder = { GameTarget.Live, GameTarget.Ptr };
-
         private readonly HttpClient _http = new();
         private readonly AddonSourceResolver _resolver = new();
         private readonly AddonInstaller _installer;
         private readonly UpdateChecker _updateChecker;
         private readonly EsoUiCatalogService _catalogService = new();
         private List<InstalledAddon> _addons = new();
+
+        // Populated from AddonPaths.DetectInstalledTargets() — only targets that already have an AddOns
+        // folder on disk are listed, in display order; this tool never creates those folders itself.
+        private List<GameTarget> _availableTargets = new();
 
         public Addon_Manager()
         {
@@ -23,10 +25,6 @@ namespace Teron_Addon_Manager
             _installer = new AddonInstaller(_http, _resolver);
             _updateChecker = new UpdateChecker(_http, _resolver);
 
-            foreach (var target in TargetsInDisplayOrder)
-            {
-                targetListBox.Items.Add(DisplayName(target));
-            }
             targetListBox.SelectedIndexChanged += TargetListBox_SelectedIndexChanged;
 
             addAddonMenuItem.Click += AddAddonButton_Click;
@@ -150,15 +148,22 @@ namespace Teron_Addon_Manager
         private static string DisplayName(GameTarget target) => target == GameTarget.Ptr ? "ESO PTR" : "ESO Live";
 
         private GameTarget SelectedTarget =>
-            targetListBox.SelectedIndex >= 0 ? TargetsInDisplayOrder[targetListBox.SelectedIndex] : GameTarget.Live;
+            targetListBox.SelectedIndex >= 0 && targetListBox.SelectedIndex < _availableTargets.Count
+                ? _availableTargets[targetListBox.SelectedIndex]
+                : GameTarget.Live;
 
         private async void Addon_Manager_Load(object? sender, EventArgs e)
         {
-            var detected = AddonPaths.DetectInstalledTargets();
-            var defaultTarget = detected.Contains(GameTarget.Live) ? GameTarget.Live
-                : detected.Count > 0 ? detected[0]
-                : GameTarget.Live;
-            targetListBox.SelectedIndex = Array.IndexOf(TargetsInDisplayOrder, defaultTarget);
+            _availableTargets = AddonPaths.DetectInstalledTargets().ToList();
+            targetListBox.Items.Clear();
+            foreach (var target in _availableTargets)
+            {
+                targetListBox.Items.Add(DisplayName(target));
+            }
+            if (_availableTargets.Count > 0)
+            {
+                targetListBox.SelectedIndex = 0;
+            }
 
             _addons = AddonLibrary.Load();
             RefreshListView();
@@ -184,10 +189,10 @@ namespace Teron_Addon_Manager
 
         private static ListViewItem CreateListViewItem(InstalledAddon addon)
         {
-            var item = new ListViewItem(addon.Name) { Tag = addon };
+            var item = new ListViewItem(addon.Name) { Tag = addon, UseItemStyleForSubItems = false };
             item.SubItems.Add(addon.InstalledVersion);
             item.SubItems.Add(addon.LatestVersion ?? "");
-            item.SubItems.Add(StatusText(addon));
+            item.SubItems.Add(StatusText(addon)).BackColor = StatusColor(addon);
             item.SubItems.Add(addon.SourceKind.ToString());
             return item;
         }
@@ -198,6 +203,14 @@ namespace Teron_Addon_Manager
             if (addon.UpdateAvailable == true) return "Update available";
             if (addon.UpdateAvailable == false) return "Up to date";
             return "Unknown";
+        }
+
+        private static Color StatusColor(InstalledAddon addon)
+        {
+            if (addon.LastCheckError is not null) return Color.FromArgb(255, 199, 206);
+            if (addon.UpdateAvailable == true) return Color.FromArgb(255, 235, 156);
+            if (addon.UpdateAvailable == false) return Color.FromArgb(198, 239, 206);
+            return SystemColors.Window;
         }
 
         private async void AddAddonButton_Click(object? sender, EventArgs e)
@@ -468,9 +481,7 @@ namespace Teron_Addon_Manager
 
         private void OpenFolderButton_Click(object? sender, EventArgs e)
         {
-            var target = SelectedTarget;
-            AddonPaths.EnsureFoldersExist(target);
-            System.Diagnostics.Process.Start("explorer.exe", AddonPaths.GetAddOnsFolder(target));
+            System.Diagnostics.Process.Start("explorer.exe", AddonPaths.GetAddOnsFolder(SelectedTarget));
         }
 
         private IEnumerable<InstalledAddon> SelectedAddons() =>

@@ -20,25 +20,20 @@ namespace Teron_Addon_Manager.Services
         public static string GetAddOnsFolder(GameTarget target) =>
             Path.Combine(GetGameFolder(target), "AddOns");
 
-        /// <remarks>The ESO client creates "live"/"ptr" the first time that version is launched, so their
-        /// presence on disk tells us which installs actually exist on this machine.</remarks>
+        /// <remarks>Checks each target's AddOns folder specifically (not just the live/ptr parent), since that's
+        /// what this tool actually needs to manage addons for that install. This tool never creates these
+        /// folders itself — only the ESO client does — so a target only shows up once it already has one.</remarks>
         public static IReadOnlyList<GameTarget> DetectInstalledTargets()
         {
             var detected = new List<GameTarget>();
             foreach (var target in new[] { GameTarget.Live, GameTarget.Ptr })
             {
-                if (Directory.Exists(GetGameFolder(target)))
+                if (Directory.Exists(GetAddOnsFolder(target)))
                 {
                     detected.Add(target);
                 }
             }
             return detected;
-        }
-
-        public static void EnsureFoldersExist(GameTarget target)
-        {
-            Directory.CreateDirectory(GetAddOnsFolder(target));
-            Directory.CreateDirectory(AppDataFolder);
         }
     }
 }

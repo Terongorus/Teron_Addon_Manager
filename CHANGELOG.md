@@ -5,7 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow major.minor.hotfix (e.g. 1.2.3).
 
-## [Unreleased]
+## [1.1.0] - 2026-06-22
+
+### Added
+
+- The "Game Version" list now only shows ESO Live/PTR entries that actually have an AddOns folder on disk, instead of always listing both — and the app no longer creates or deletes any of those folders itself; it only manages addons within installs that already exist.
+- The addon list's Status column is now color-coded: green for "Up to date", yellow for "Update available", red for "Check failed", so addons needing attention stand out immediately.
+- Addon descriptions render with real structure instead of flattened plain text: bold section headings (from ESOUI's `[SIZE]`/`[B]` formatting), properly indented bullet and numbered lists, and bordered monospace code blocks (`[CODE]`, `[QUOTE]`, `[HIGHLIGHT]`) — much closer to how the addon's page looks on the website itself.
+- Description images can be clicked to open an enlarged preview, and the details dialog now reflows when resized or maximized: text, lists, and headings use the extra width, while images and code blocks stay at a natural, readable size instead of stretching to fill the window.
+
+### Fixed
+
+- Long descriptions could occasionally get cut off partway through, or leave extra blank space after the content, depending on the addon — the scrollable area is now always recalculated from the content's actual current size instead of a value that could go stale.
+- The description text no longer shows a blinking edit cursor or otherwise looks like an editable field, and the mouse wheel now scrolls correctly while hovering directly over it.
+- A handful of addons had bracketed placeholder text in their description (like `[argument]`) silently deleted, because the cleanup step was treating any bracketed word as a BBCode tag instead of checking it against the actual set of tags ESOUI uses.
 
 ## [1.0.0] - 2026-06-20
 
