@@ -1,10 +1,14 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 using Teron_Addon_Manager.Models;
 using Teron_Addon_Manager.Services;
 using Teron_Addon_Manager.Sources;
+using Cursors = System.Windows.Input.Cursors;
 
 namespace Teron_Addon_Manager
 {
-    public partial class MarketplaceForm : Form
+    public partial class MarketplaceForm : Window
     {
         private readonly HttpClient _http;
         private readonly EsoUiCatalogService _catalogService = new();
@@ -18,58 +22,61 @@ namespace Teron_Addon_Manager
             InitializeComponent();
             _http = http;
 
-            sortComboBox.Items.AddRange(new object[] { "Name (A-Z)", "Last Updated (Newest)", "Most Downloaded" });
+            sortComboBox.Items.Add("Name (A-Z)");
+            sortComboBox.Items.Add("Last Updated (Newest)");
+            sortComboBox.Items.Add("Most Downloaded");
             sortComboBox.SelectedIndex = 0;
 
             searchTextBox.TextChanged += (_, _) => ApplyFilters();
-            categoryComboBox.SelectedIndexChanged += (_, _) => ApplyFilters();
-            sortComboBox.SelectedIndexChanged += (_, _) => ApplyFilters();
-            refreshMenuItem.Click += async (_, _) => await LoadCatalogAsync(forceRefresh: true);
+            categoryComboBox.SelectionChanged += (_, _) => ApplyFilters();
+            sortComboBox.SelectionChanged += (_, _) => ApplyFilters();
+            refreshButton.Click += async (_, _) => await LoadCatalogAsync(forceRefresh: true);
             installButton.Click += InstallButton_Click;
             installContextItem.Click += InstallButton_Click;
             viewDetailsContextItem.Click += ViewDetailsContextItem_Click;
-            resultsListView.MouseDown += ResultsListView_MouseDown;
+            resultsListView.PreviewMouseRightButtonDown += ResultsListView_PreviewMouseRightButtonDown;
             resultsListView.KeyDown += ResultsListView_KeyDown;
-            Load += async (_, _) => await LoadCatalogAsync(forceRefresh: false);
+            Loaded += async (_, _) => await LoadCatalogAsync(forceRefresh: false);
         }
 
-        private void ResultsListView_KeyDown(object? sender, KeyEventArgs e)
+        private void ResultsListView_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if (e.Control && e.KeyCode == Keys.A)
+            if (System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control && e.Key == System.Windows.Input.Key.A)
             {
-                foreach (ListViewItem item in resultsListView.Items)
-                {
-                    item.Selected = true;
-                }
+                resultsListView.SelectAll();
                 e.Handled = true;
-                e.SuppressKeyPress = true;
             }
         }
 
-        private void ResultsListView_MouseDown(object? sender, MouseEventArgs e)
+        // Right-clicking an unselected row should select just that row, matching the original
+        // WinForms behavior, instead of leaving whatever was previously selected untouched.
+        private void ResultsListView_PreviewMouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (e.Button != MouseButtons.Right)
+            var item = FindAncestor<System.Windows.Controls.ListViewItem>(e.OriginalSource as DependencyObject);
+            if (item is null || item.IsSelected)
             {
                 return;
             }
-
-            var hit = resultsListView.HitTest(e.Location);
-            if (hit.Item is null || hit.Item.Selected)
-            {
-                return;
-            }
-
-            foreach (ListViewItem selected in resultsListView.SelectedItems.Cast<ListViewItem>().ToList())
-            {
-                selected.Selected = false;
-            }
-            hit.Item.Selected = true;
-            hit.Item.Focused = true;
+            resultsListView.SelectedItems.Clear();
+            item.IsSelected = true;
         }
 
-        private async void ViewDetailsContextItem_Click(object? sender, EventArgs e)
+        private static T? FindAncestor<T>(DependencyObject? current) where T : DependencyObject
         {
-            var entry = resultsListView.SelectedItems.Cast<ListViewItem>().Select(i => (EsoUiCatalogEntry)i.Tag!).FirstOrDefault();
+            while (current is not null)
+            {
+                if (current is T match)
+                {
+                    return match;
+                }
+                current = VisualTreeHelper.GetParent(current);
+            }
+            return null;
+        }
+
+        private async void ViewDetailsContextItem_Click(object sender, RoutedEventArgs e)
+        {
+            var entry = resultsListView.SelectedItems.Cast<MarketplaceRow>().FirstOrDefault()?.Entry;
             if (entry is null)
             {
                 return;
@@ -96,15 +103,15 @@ namespace Teron_Addon_Manager
             }
             catch (Exception ex)
             {
-                statusLabel.Text = $"Could not load addon description: {ex.Message}";
+                statusText.Text = $"Could not load addon description: {ex.Message}";
             }
             finally
             {
                 SetBusy(false);
             }
 
-            using var dialog = new AddonDetailsDialog(entry.Title, "ESOUI marketplace listing", fields, description);
-            dialog.ShowDialog(this);
+            var dialog = new AddonDetailsDialog(entry.Title, "ESOUI marketplace listing", fields, description) { Owner = this };
+            dialog.ShowDialog();
         }
 
         private async Task LoadCatalogAsync(bool forceRefresh)
@@ -131,7 +138,7 @@ namespace Teron_Addon_Manager
             }
             catch (Exception ex)
             {
-                statusLabel.Text = $"Failed to load catalog: {ex.Message}";
+                statusText.Text = $"Failed to load catalog: {ex.Message}";
             }
             finally
             {
@@ -163,45 +170,53 @@ namespace Teron_Addon_Manager
                 _ => query.OrderBy(e => e.Title, StringComparer.OrdinalIgnoreCase)
             };
 
-            resultsListView.BeginUpdate();
-            resultsListView.Items.Clear();
-            foreach (var entry in query)
+            var rows = query.Select(entry => new MarketplaceRow
             {
-                var item = new ListViewItem(entry.Title) { Tag = entry };
-                item.SubItems.Add(entry.Author);
-                item.SubItems.Add(_categoryTitles.TryGetValue(entry.CategoryId, out var title) ? title : "");
-                item.SubItems.Add(entry.Downloads.ToString("N0"));
-                item.SubItems.Add(entry.LastUpdate?.ToString("yyyy-MM-dd") ?? "");
-                resultsListView.Items.Add(item);
-            }
-            resultsListView.EndUpdate();
+                Entry = entry,
+                Title = entry.Title,
+                Author = entry.Author,
+                CategoryTitle = _categoryTitles.TryGetValue(entry.CategoryId, out var title) ? title : "",
+                DownloadsText = entry.Downloads.ToString("N0"),
+                LastUpdatedText = entry.LastUpdate?.ToString("yyyy-MM-dd") ?? ""
+            }).ToList();
 
-            statusLabel.Text = $"Showing {resultsListView.Items.Count} of {_allEntries.Count} addons.";
+            resultsListView.ItemsSource = rows;
+            statusText.Text = $"Showing {rows.Count} of {_allEntries.Count} addons.";
         }
 
-        private void InstallButton_Click(object? sender, EventArgs e)
+        private void InstallButton_Click(object sender, RoutedEventArgs e)
         {
-            var selected = resultsListView.SelectedItems.Cast<ListViewItem>().Select(i => (EsoUiCatalogEntry)i.Tag!).ToList();
+            var selected = resultsListView.SelectedItems.Cast<MarketplaceRow>().Select(r => r.Entry).ToList();
             if (selected.Count == 0)
             {
-                MessageBox.Show(this, "Select one or more addons to install.", "Install", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                FluentMessageBox.Show(this, "Select one or more addons to install.", "Install");
                 return;
             }
 
             SelectedAddons = selected;
-            DialogResult = DialogResult.OK;
+            DialogResult = true;
         }
 
         private void SetBusy(bool busy, string? status = null)
         {
-            UseWaitCursor = busy;
-            installButton.Enabled = !busy;
-            installContextItem.Enabled = !busy;
-            refreshMenuItem.Enabled = !busy;
+            Cursor = busy ? Cursors.Wait : Cursors.Arrow;
+            installButton.IsEnabled = !busy;
+            installContextItem.IsEnabled = !busy;
+            refreshButton.IsEnabled = !busy;
             if (status is not null)
             {
-                statusLabel.Text = status;
+                statusText.Text = status;
             }
+        }
+
+        private sealed class MarketplaceRow
+        {
+            public required EsoUiCatalogEntry Entry { get; init; }
+            public required string Title { get; init; }
+            public required string Author { get; init; }
+            public required string CategoryTitle { get; init; }
+            public required string DownloadsText { get; init; }
+            public required string LastUpdatedText { get; init; }
         }
     }
 }

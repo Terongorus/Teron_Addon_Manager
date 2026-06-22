@@ -1,10 +1,14 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 using Teron_Addon_Manager.Models;
 using Teron_Addon_Manager.Services;
 using Teron_Addon_Manager.Sources;
+using Cursors = System.Windows.Input.Cursors;
 
 namespace Teron_Addon_Manager
 {
-    public partial class Addon_Manager : Form
+    public partial class Addon_Manager : Window
     {
         private readonly HttpClient _http = new();
         private readonly AddonSourceResolver _resolver = new();
@@ -25,18 +29,24 @@ namespace Teron_Addon_Manager
             _installer = new AddonInstaller(_http, _resolver);
             _updateChecker = new UpdateChecker(_http, _resolver);
 
-            targetListBox.SelectedIndexChanged += TargetListBox_SelectedIndexChanged;
+            themeComboBox.Items.Add("System");
+            themeComboBox.Items.Add("Light");
+            themeComboBox.Items.Add("Dark");
+            themeComboBox.SelectedIndex = 0;
+            themeComboBox.SelectionChanged += ThemeComboBox_SelectionChanged;
 
-            addAddonMenuItem.Click += AddAddonButton_Click;
-            checkUpdatesMenuItem.Click += CheckUpdatesButton_Click;
-            updateSelectedMenuItem.Click += UpdateSelectedButton_Click;
-            removeSelectedMenuItem.Click += RemoveSelectedButton_Click;
-            scanLocalMenuItem.Click += ScanLocalMenuItem_Click;
-            browseMarketplaceMenuItem.Click += BrowseMarketplaceMenuItem_Click;
-            openFolderMenuItem.Click += OpenFolderButton_Click;
-            Load += Addon_Manager_Load;
+            targetListBox.SelectionChanged += (_, _) => RefreshListView();
 
-            addonListView.MouseDown += AddonListView_MouseDown;
+            addAddonButton.Click += AddAddonButton_Click;
+            checkUpdatesButton.Click += CheckUpdatesButton_Click;
+            updateSelectedButton.Click += UpdateSelectedButton_Click;
+            removeSelectedButton.Click += RemoveSelectedButton_Click;
+            scanLocalButton.Click += ScanLocalButton_Click;
+            browseMarketplaceButton.Click += BrowseMarketplaceButton_Click;
+            openFolderButton.Click += OpenFolderButton_Click;
+            Loaded += Addon_Manager_Loaded;
+
+            addonListView.PreviewMouseRightButtonDown += AddonListView_PreviewMouseRightButtonDown;
             addonListView.KeyDown += AddonListView_KeyDown;
             viewDetailsContextItem.Click += ViewDetailsContextItem_Click;
             checkSelectedContextItem.Click += CheckSelectedContextItem_Click;
@@ -44,41 +54,59 @@ namespace Teron_Addon_Manager
             removeSelectedContextItem.Click += RemoveSelectedButton_Click;
         }
 
-        private void AddonListView_KeyDown(object? sender, KeyEventArgs e)
+        private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.Control && e.KeyCode == Keys.A)
+            var mode = themeComboBox.SelectedIndex switch
             {
-                foreach (ListViewItem item in addonListView.Items)
-                {
-                    item.Selected = true;
-                }
+                1 => ThemeMode.Light,
+                2 => ThemeMode.Dark,
+                _ => ThemeMode.System
+            };
+
+            // Window-level ThemeMode overrides the Application-level one, so the currently open main
+            // window needs its own ThemeMode set directly to actually re-theme live; setting only
+            // Application.Current.ThemeMode is still needed so dialogs opened afterward (which have no
+            // explicit ThemeMode of their own) pick up the same choice.
+            System.Windows.Application.Current.ThemeMode = mode;
+            ThemeMode = mode;
+        }
+
+        private void AddonListView_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control && e.Key == System.Windows.Input.Key.A)
+            {
+                addonListView.SelectAll();
                 e.Handled = true;
-                e.SuppressKeyPress = true;
             }
         }
 
-        private void AddonListView_MouseDown(object? sender, MouseEventArgs e)
+        // Right-clicking an unselected row should select just that row, matching the original
+        // WinForms behavior, instead of leaving whatever was previously selected untouched.
+        private void AddonListView_PreviewMouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (e.Button != MouseButtons.Right)
+            var item = FindAncestor<System.Windows.Controls.ListViewItem>(e.OriginalSource as DependencyObject);
+            if (item is null || item.IsSelected)
             {
                 return;
             }
-
-            var hit = addonListView.HitTest(e.Location);
-            if (hit.Item is null || hit.Item.Selected)
-            {
-                return;
-            }
-
-            foreach (ListViewItem selected in addonListView.SelectedItems.Cast<ListViewItem>().ToList())
-            {
-                selected.Selected = false;
-            }
-            hit.Item.Selected = true;
-            hit.Item.Focused = true;
+            addonListView.SelectedItems.Clear();
+            item.IsSelected = true;
         }
 
-        private async void ViewDetailsContextItem_Click(object? sender, EventArgs e)
+        private static T? FindAncestor<T>(DependencyObject? current) where T : DependencyObject
+        {
+            while (current is not null)
+            {
+                if (current is T match)
+                {
+                    return match;
+                }
+                current = VisualTreeHelper.GetParent(current);
+            }
+            return null;
+        }
+
+        private async void ViewDetailsContextItem_Click(object sender, RoutedEventArgs e)
         {
             var addon = SelectedAddons().FirstOrDefault();
             if (addon is null)
@@ -119,11 +147,11 @@ namespace Teron_Addon_Manager
                 }
             }
 
-            using var dialog = new AddonDetailsDialog(addon.Name, $"{addon.SourceKind} addon", fields, description);
-            dialog.ShowDialog(this);
+            var dialog = new AddonDetailsDialog(addon.Name, $"{addon.SourceKind} addon", fields, description) { Owner = this };
+            dialog.ShowDialog();
         }
 
-        private async void CheckSelectedContextItem_Click(object? sender, EventArgs e)
+        private async void CheckSelectedContextItem_Click(object sender, RoutedEventArgs e)
         {
             var selected = SelectedAddons().ToList();
             if (selected.Count == 0)
@@ -152,7 +180,7 @@ namespace Teron_Addon_Manager
                 ? _availableTargets[targetListBox.SelectedIndex]
                 : GameTarget.Live;
 
-        private async void Addon_Manager_Load(object? sender, EventArgs e)
+        private async void Addon_Manager_Loaded(object sender, RoutedEventArgs e)
         {
             _availableTargets = AddonPaths.DetectInstalledTargets().ToList();
             targetListBox.Items.Clear();
@@ -171,31 +199,23 @@ namespace Teron_Addon_Manager
             await ScanForLocalAddonsAsync(isManualTrigger: false);
         }
 
-        private void TargetListBox_SelectedIndexChanged(object? sender, EventArgs e) => RefreshListView();
-
         private IEnumerable<InstalledAddon> AddonsForSelectedTarget() =>
             _addons.Where(a => a.Target == SelectedTarget);
 
         private void RefreshListView()
         {
-            addonListView.BeginUpdate();
-            addonListView.Items.Clear();
-            foreach (var addon in AddonsForSelectedTarget())
-            {
-                addonListView.Items.Add(CreateListViewItem(addon));
-            }
-            addonListView.EndUpdate();
+            addonListView.ItemsSource = AddonsForSelectedTarget().Select(CreateRow).ToList();
         }
 
-        private static ListViewItem CreateListViewItem(InstalledAddon addon)
+        private static AddonRow CreateRow(InstalledAddon addon) => new()
         {
-            var item = new ListViewItem(addon.Name) { Tag = addon, UseItemStyleForSubItems = false };
-            item.SubItems.Add(addon.InstalledVersion);
-            item.SubItems.Add(addon.LatestVersion ?? "");
-            item.SubItems.Add(StatusText(addon)).BackColor = StatusColor(addon);
-            item.SubItems.Add(addon.SourceKind.ToString());
-            return item;
-        }
+            Addon = addon,
+            Name = addon.Name,
+            Installed = addon.InstalledVersion,
+            Latest = addon.LatestVersion ?? "",
+            Status = StatusText(addon),
+            Source = addon.SourceKind.ToString()
+        };
 
         private static string StatusText(InstalledAddon addon)
         {
@@ -205,18 +225,10 @@ namespace Teron_Addon_Manager
             return "Unknown";
         }
 
-        private static Color StatusColor(InstalledAddon addon)
+        private async void AddAddonButton_Click(object sender, RoutedEventArgs e)
         {
-            if (addon.LastCheckError is not null) return Color.FromArgb(255, 199, 206);
-            if (addon.UpdateAvailable == true) return Color.FromArgb(255, 235, 156);
-            if (addon.UpdateAvailable == false) return Color.FromArgb(198, 239, 206);
-            return SystemColors.Window;
-        }
-
-        private async void AddAddonButton_Click(object? sender, EventArgs e)
-        {
-            using var dialog = new AddAddonDialog();
-            if (dialog.ShowDialog(this) != DialogResult.OK || dialog.ResultUrl is null)
+            var dialog = new AddAddonDialog { Owner = this };
+            if (dialog.ShowDialog() != true || dialog.ResultUrl is null)
             {
                 return;
             }
@@ -233,7 +245,7 @@ namespace Teron_Addon_Manager
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "Could not add addon", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                FluentMessageBox.Show(this, ex.Message, "Could not add addon", icon: FluentMessageBoxIcon.Error);
                 SetStatus("Add addon failed.");
             }
             finally
@@ -242,7 +254,7 @@ namespace Teron_Addon_Manager
             }
         }
 
-        private async void CheckUpdatesButton_Click(object? sender, EventArgs e) => await RunUpdateCheckAsync();
+        private async void CheckUpdatesButton_Click(object sender, RoutedEventArgs e) => await RunUpdateCheckAsync();
 
         private async Task RunUpdateCheckAsync()
         {
@@ -269,12 +281,12 @@ namespace Teron_Addon_Manager
             }
         }
 
-        private async void UpdateSelectedButton_Click(object? sender, EventArgs e)
+        private async void UpdateSelectedButton_Click(object sender, RoutedEventArgs e)
         {
             var selected = SelectedAddons().ToList();
             if (selected.Count == 0)
             {
-                MessageBox.Show(this, "Select one or more addons to update.", "Update Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                FluentMessageBox.Show(this, "Select one or more addons to update.", "Update Selected");
                 return;
             }
 
@@ -290,7 +302,7 @@ namespace Teron_Addon_Manager
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(this, $"Failed to update {addon.Name}: {ex.Message}", "Update failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        FluentMessageBox.Show(this, $"Failed to update {addon.Name}: {ex.Message}", "Update failed", icon: FluentMessageBoxIcon.Error);
                     }
                 }
                 AddonLibrary.Save(_addons);
@@ -303,19 +315,19 @@ namespace Teron_Addon_Manager
             }
         }
 
-        private void RemoveSelectedButton_Click(object? sender, EventArgs e)
+        private void RemoveSelectedButton_Click(object sender, RoutedEventArgs e)
         {
             var selected = SelectedAddons().ToList();
             if (selected.Count == 0)
             {
-                MessageBox.Show(this, "Select one or more addons to remove.", "Remove Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                FluentMessageBox.Show(this, "Select one or more addons to remove.", "Remove Selected");
                 return;
             }
 
             var names = string.Join(", ", selected.Select(a => a.Name));
-            var confirm = MessageBox.Show(this, $"Remove {names} and delete their files from the AddOns folder?",
-                "Confirm Remove", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-            if (confirm != DialogResult.Yes)
+            var confirmed = FluentMessageBox.Show(this, $"Remove {names} and delete their files from the AddOns folder?",
+                "Confirm Remove", FluentMessageBoxButtons.YesNo, FluentMessageBoxIcon.Warning);
+            if (!confirmed)
             {
                 return;
             }
@@ -331,7 +343,7 @@ namespace Teron_Addon_Manager
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(this, $"Failed to remove {addon.Name}: {ex.Message}", "Remove failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    FluentMessageBox.Show(this, $"Failed to remove {addon.Name}: {ex.Message}", "Remove failed", icon: FluentMessageBoxIcon.Error);
                 }
             }
 
@@ -343,7 +355,7 @@ namespace Teron_Addon_Manager
             }
         }
 
-        private async void ScanLocalMenuItem_Click(object? sender, EventArgs e) => await ScanForLocalAddonsAsync(isManualTrigger: true);
+        private async void ScanLocalButton_Click(object sender, RoutedEventArgs e) => await ScanForLocalAddonsAsync(isManualTrigger: true);
 
         private async Task ScanForLocalAddonsAsync(bool isManualTrigger)
         {
@@ -361,13 +373,13 @@ namespace Teron_Addon_Manager
                     SetStatus("No new local addons found.");
                     if (isManualTrigger)
                     {
-                        MessageBox.Show(this, "No unmanaged addon folders were found.", "Scan for Local Addons", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        FluentMessageBox.Show(this, "No unmanaged addon folders were found.", "Scan for Local Addons");
                     }
                     return;
                 }
 
-                using var dialog = new ScanResultsDialog(candidates);
-                if (dialog.ShowDialog(this) != DialogResult.OK || dialog.AdoptedCandidates.Count == 0)
+                var dialog = new ScanResultsDialog(candidates) { Owner = this };
+                if (dialog.ShowDialog() != true || dialog.AdoptedCandidates.Count == 0)
                 {
                     SetStatus($"Found {candidates.Count} local addon(s); none adopted.");
                     return;
@@ -402,8 +414,8 @@ namespace Teron_Addon_Manager
                 SetStatus(adopted.Count > 0 ? $"Adopted {adopted.Count} local addon(s)." : "No addons adopted.");
                 if (skipped.Count > 0)
                 {
-                    MessageBox.Show(this, $"Skipped (already tracked):{Environment.NewLine}{string.Join(Environment.NewLine, skipped)}",
-                        "Scan for Local Addons", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    FluentMessageBox.Show(this, $"Skipped (already tracked):{Environment.NewLine}{string.Join(Environment.NewLine, skipped)}",
+                        "Scan for Local Addons", icon: FluentMessageBoxIcon.Warning);
                 }
                 if (adopted.Count > 0)
                 {
@@ -420,10 +432,10 @@ namespace Teron_Addon_Manager
             }
         }
 
-        private async void BrowseMarketplaceMenuItem_Click(object? sender, EventArgs e)
+        private async void BrowseMarketplaceButton_Click(object sender, RoutedEventArgs e)
         {
-            using var dialog = new MarketplaceForm(_http);
-            if (dialog.ShowDialog(this) != DialogResult.OK || dialog.SelectedAddons.Count == 0)
+            var dialog = new MarketplaceForm(_http) { Owner = this };
+            if (dialog.ShowDialog() != true || dialog.SelectedAddons.Count == 0)
             {
                 return;
             }
@@ -448,16 +460,16 @@ namespace Teron_Addon_Manager
                             {
                                 _addons.Remove(old);
                             }
-                            MessageBox.Show(this,
+                            FluentMessageBox.Show(this,
                                 $"'{entry.Title}' shares a folder with {string.Join(", ", replaced.Select(a => a.Name))}, which was already tracked. Replaced it with the marketplace install.",
-                                "Install", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                "Install", icon: FluentMessageBoxIcon.Warning);
                         }
 
                         _addons.Add(addon);
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(this, $"Failed to install {entry.Title}: {ex.Message}", "Install failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        FluentMessageBox.Show(this, $"Failed to install {entry.Title}: {ex.Message}", "Install failed", icon: FluentMessageBoxIcon.Error);
                     }
                 }
                 AddonLibrary.Save(_addons);
@@ -479,27 +491,27 @@ namespace Teron_Addon_Manager
             return conflictFolder is not null;
         }
 
-        private void OpenFolderButton_Click(object? sender, EventArgs e)
+        private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
         {
             System.Diagnostics.Process.Start("explorer.exe", AddonPaths.GetAddOnsFolder(SelectedTarget));
         }
 
         private IEnumerable<InstalledAddon> SelectedAddons() =>
-            addonListView.SelectedItems.Cast<ListViewItem>().Select(i => (InstalledAddon)i.Tag!);
+            addonListView.SelectedItems.Cast<AddonRow>().Select(r => r.Addon);
 
         private void SetBusy(bool busy, string? status = null)
         {
-            UseWaitCursor = busy;
-            addAddonMenuItem.Enabled = !busy;
-            checkUpdatesMenuItem.Enabled = !busy;
-            updateSelectedMenuItem.Enabled = !busy;
-            removeSelectedMenuItem.Enabled = !busy;
-            scanLocalMenuItem.Enabled = !busy;
-            browseMarketplaceMenuItem.Enabled = !busy;
-            checkSelectedContextItem.Enabled = !busy;
-            updateSelectedContextItem.Enabled = !busy;
-            removeSelectedContextItem.Enabled = !busy;
-            targetListBox.Enabled = !busy;
+            Cursor = busy ? Cursors.Wait : Cursors.Arrow;
+            addAddonButton.IsEnabled = !busy;
+            checkUpdatesButton.IsEnabled = !busy;
+            updateSelectedButton.IsEnabled = !busy;
+            removeSelectedButton.IsEnabled = !busy;
+            scanLocalButton.IsEnabled = !busy;
+            browseMarketplaceButton.IsEnabled = !busy;
+            checkSelectedContextItem.IsEnabled = !busy;
+            updateSelectedContextItem.IsEnabled = !busy;
+            removeSelectedContextItem.IsEnabled = !busy;
+            targetListBox.IsEnabled = !busy;
             if (status is not null)
             {
                 SetStatus(status);
@@ -507,5 +519,15 @@ namespace Teron_Addon_Manager
         }
 
         private void SetStatus(string text) => statusLabel.Text = text;
+
+        private sealed class AddonRow
+        {
+            public required InstalledAddon Addon { get; init; }
+            public required string Name { get; init; }
+            public required string Installed { get; init; }
+            public required string Latest { get; init; }
+            public required string Status { get; init; }
+            public required string Source { get; init; }
+        }
     }
 }
