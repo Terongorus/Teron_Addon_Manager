@@ -14,6 +14,8 @@ namespace Teron_Addon_Manager.Services
 
         public static string LibraryFilePath { get; } = Path.Combine(AppDataFolder, "addons.json");
 
+        public static string UiSettingsFilePath { get; } = Path.Combine(AppDataFolder, "uisettings.json");
+
         public static string GetGameFolder(GameTarget target) =>
             Path.Combine(RootFolder, target == GameTarget.Live ? "live" : "ptr");
 

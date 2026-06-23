@@ -1,6 +1,8 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Teron_Addon_Manager.Helpers;
 using Teron_Addon_Manager.Models;
 using Teron_Addon_Manager.Services;
 using Teron_Addon_Manager.Sources;
@@ -21,22 +23,44 @@ namespace Teron_Addon_Manager
         // folder on disk are listed, in display order; this tool never creates those folders itself.
         private List<GameTarget> _availableTargets = new();
 
+        // Null direction means "default order" (no sort applied, original enumeration order).
+        private GridViewColumn? _sortColumn;
+        private ListSortDirection? _sortDirection;
+
+        private bool _busy;
+
+        private readonly UiSettings _uiSettings = UiSettingsStore.Load();
+
         public Addon_Manager()
         {
             InitializeComponent();
+
+            WindowPlacementHelper.Apply(this, _uiSettings.AddonManagerWindow);
+            Closing += Addon_Manager_Closing;
+            StateChanged += (_, _) => UpdateSearchBoxWidth();
+            UpdateSearchBoxWidth();
 
             _http.DefaultRequestHeaders.UserAgent.ParseAdd("Teron-Addon-Manager/1.0");
             _installer = new AddonInstaller(_http, _resolver);
             _updateChecker = new UpdateChecker(_http, _resolver);
 
-            themeComboBox.Items.Add("System");
-            themeComboBox.Items.Add("Light");
-            themeComboBox.Items.Add("Dark");
-            themeComboBox.SelectedIndex = 0;
-            themeComboBox.SelectionChanged += ThemeComboBox_SelectionChanged;
+            // Fluent's backdrop only fully activates once ThemeMode has been assigned at least once at
+            // runtime — a window that has never gone through ThemeRadio_Checked renders measurably (if
+            // subtly) different from one that has. Wiring Checked before the initial IsChecked assignment
+            // makes this the first real "switch," normalizing first launch to match every later one.
+            themeSystemRadio.Checked += ThemeRadio_Checked;
+            themeLightRadio.Checked += ThemeRadio_Checked;
+            themeDarkRadio.Checked += ThemeRadio_Checked;
+            var initialThemeRadio = _uiSettings.ThemeMode switch
+            {
+                "Light" => themeLightRadio,
+                "Dark" => themeDarkRadio,
+                _ => themeSystemRadio
+            };
+            initialThemeRadio.IsChecked = true;
 
-            targetListBox.SelectionChanged += (_, _) => RefreshListView();
-
+            searchTextBox.TextChanged += (_, _) => RefreshListView();
+            searchTextBox.KeyDown += SearchTextBox_KeyDown;
             addAddonButton.Click += AddAddonButton_Click;
             checkUpdatesButton.Click += CheckUpdatesButton_Click;
             updateSelectedButton.Click += UpdateSelectedButton_Click;
@@ -47,21 +71,22 @@ namespace Teron_Addon_Manager
             Loaded += Addon_Manager_Loaded;
 
             addonListView.PreviewMouseRightButtonDown += AddonListView_PreviewMouseRightButtonDown;
+            addonListView.PreviewMouseLeftButtonDown += AddonListView_PreviewMouseLeftButtonDown;
             addonListView.KeyDown += AddonListView_KeyDown;
+            addonListView.AddHandler(GridViewColumnHeader.ClickEvent, new RoutedEventHandler(AddonListView_ColumnHeaderClick));
+            addonListView.SelectionChanged += AddonListView_SelectionChanged;
+            GridViewAutoFit.Attach(this, addonListView);
             viewDetailsContextItem.Click += ViewDetailsContextItem_Click;
             checkSelectedContextItem.Click += CheckSelectedContextItem_Click;
             updateSelectedContextItem.Click += UpdateSelectedButton_Click;
             removeSelectedContextItem.Click += RemoveSelectedButton_Click;
         }
 
-        private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ThemeRadio_Checked(object sender, RoutedEventArgs e)
         {
-            var mode = themeComboBox.SelectedIndex switch
-            {
-                1 => ThemeMode.Light,
-                2 => ThemeMode.Dark,
-                _ => ThemeMode.System
-            };
+            var mode = ThemeMode.System;
+            if (sender == themeLightRadio) mode = ThemeMode.Light;
+            else if (sender == themeDarkRadio) mode = ThemeMode.Dark;
 
             // Window-level ThemeMode overrides the Application-level one, so the currently open main
             // window needs its own ThemeMode set directly to actually re-theme live; setting only
@@ -69,6 +94,26 @@ namespace Teron_Addon_Manager
             // explicit ThemeMode of their own) pick up the same choice.
             System.Windows.Application.Current.ThemeMode = mode;
             ThemeMode = mode;
+
+            UpdateThemeRadioForeground();
+
+            // The Status column's badge colors depend on the resolved theme; re-running the converter
+            // is the only way to pick that up since the underlying Status strings haven't changed.
+            RefreshListView();
+        }
+
+        // The unselected segments' Foreground can't be left to a Binding driven only by IsChecked: that
+        // binding is only re-evaluated when IsChecked itself changes, not when ThemeMode changes a moment
+        // later, so a converter reading the *current* theme at that point races the actual theme update
+        // and goes stale (confirmed: it broke for whichever segment had just been deselected). Setting it
+        // directly here, once per switch, evaluates against the theme that's actually active by then.
+        private void UpdateThemeRadioForeground()
+        {
+            var uncheckedBrush = ThemeHelper.IsDarkActive() ? Brushes.White : Brushes.Black;
+            foreach (var radio in new[] { themeSystemRadio, themeLightRadio, themeDarkRadio })
+            {
+                radio.Foreground = radio.IsChecked == true ? Brushes.White : uncheckedBrush;
+            }
         }
 
         private void AddonListView_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -77,6 +122,169 @@ namespace Teron_Addon_Manager
             {
                 addonListView.SelectAll();
                 e.Handled = true;
+            }
+            else if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                addonListView.SelectedItems.Clear();
+                e.Handled = true;
+            }
+        }
+
+        // WPF's default Selector behavior has no way to get back to "nothing selected" once a row is
+        // selected: clicking empty space leaves the old selection alone, and re-clicking the same row is a
+        // no-op. Both are handled explicitly here so Escape, clicking elsewhere, and re-clicking the
+        // selected row all deselect, matching what users expect from a Windows list.
+        private void AddonListView_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var item = FindAncestor<System.Windows.Controls.ListViewItem>(e.OriginalSource as DependencyObject);
+            if (item is null)
+            {
+                addonListView.SelectedItems.Clear();
+                return;
+            }
+
+            if (item.IsSelected && System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.None)
+            {
+                item.IsSelected = false;
+                e.Handled = true;
+            }
+        }
+
+        // Cycles a clicked column header through ascending -> descending -> default (no sort) order;
+        // clicking a different column always restarts that cycle at ascending.
+        private void AddonListView_ColumnHeaderClick(object sender, RoutedEventArgs e)
+        {
+            if (e.OriginalSource is not GridViewColumnHeader { Column: { } column })
+            {
+                return;
+            }
+
+            if (!ReferenceEquals(_sortColumn, column))
+            {
+                _sortColumn = column;
+                _sortDirection = ListSortDirection.Ascending;
+            }
+            else
+            {
+                _sortDirection = _sortDirection switch
+                {
+                    ListSortDirection.Ascending => ListSortDirection.Descending,
+                    ListSortDirection.Descending => null,
+                    _ => ListSortDirection.Ascending
+                };
+                if (_sortDirection is null)
+                {
+                    _sortColumn = null;
+                }
+            }
+
+            UpdateSortArrows();
+            RefreshListView();
+        }
+
+        private void UpdateSortArrows()
+        {
+            SetSortArrow(nameSortArrow, nameColumn);
+            SetSortArrow(installedSortArrow, installedColumn);
+            SetSortArrow(latestSortArrow, latestColumn);
+            SetSortArrow(statusSortArrow, statusColumn);
+            SetSortArrow(sourceSortArrow, sourceColumn);
+        }
+
+        private void SetSortArrow(TextBlock arrow, GridViewColumn column)
+        {
+            if (!ReferenceEquals(_sortColumn, column) || _sortDirection is null)
+            {
+                arrow.Text = "";
+                return;
+            }
+            arrow.Text = _sortDirection == ListSortDirection.Ascending ? "" : "";
+        }
+
+        private GridViewColumn? GetColumnByName(string? name) => name switch
+        {
+            "Name" => nameColumn,
+            "Installed" => installedColumn,
+            "Latest" => latestColumn,
+            "Status" => statusColumn,
+            "Source" => sourceColumn,
+            _ => null
+        };
+
+        private string? GetColumnName(GridViewColumn? column)
+        {
+            if (ReferenceEquals(column, nameColumn)) return "Name";
+            if (ReferenceEquals(column, installedColumn)) return "Installed";
+            if (ReferenceEquals(column, latestColumn)) return "Latest";
+            if (ReferenceEquals(column, statusColumn)) return "Status";
+            if (ReferenceEquals(column, sourceColumn)) return "Source";
+            return null;
+        }
+
+        private IEnumerable<AddonRow> ApplySort(IEnumerable<AddonRow> rows)
+        {
+            if (_sortColumn is null || _sortDirection is null)
+            {
+                return rows;
+            }
+
+            Func<AddonRow, string> keySelector = true switch
+            {
+                _ when ReferenceEquals(_sortColumn, nameColumn) => r => r.Name,
+                _ when ReferenceEquals(_sortColumn, installedColumn) => r => r.Installed,
+                _ when ReferenceEquals(_sortColumn, latestColumn) => r => r.Latest,
+                _ when ReferenceEquals(_sortColumn, statusColumn) => r => r.Status,
+                _ when ReferenceEquals(_sortColumn, sourceColumn) => r => r.Source,
+                _ => r => r.Name
+            };
+
+            return _sortDirection == ListSortDirection.Descending
+                ? rows.OrderByDescending(keySelector, NaturalStringComparer.Instance)
+                : rows.OrderBy(keySelector, NaturalStringComparer.Instance);
+        }
+
+        // Compares version-like strings (e.g. "2.21.0" vs "88") by numeric runs instead of lexically, so
+        // the Installed/Latest columns sort the way a user would expect instead of "10" landing before "2".
+        private sealed class NaturalStringComparer : IComparer<string>
+        {
+            public static readonly NaturalStringComparer Instance = new();
+
+            public int Compare(string? a, string? b)
+            {
+                a ??= "";
+                b ??= "";
+                int i = 0, j = 0;
+                while (i < a.Length && j < b.Length)
+                {
+                    if (char.IsDigit(a[i]) && char.IsDigit(b[j]))
+                    {
+                        int startI = i, startJ = j;
+                        while (i < a.Length && char.IsDigit(a[i])) i++;
+                        while (j < b.Length && char.IsDigit(b[j])) j++;
+                        var numA = a[startI..i].TrimStart('0');
+                        var numB = b[startJ..j].TrimStart('0');
+                        if (numA.Length != numB.Length)
+                        {
+                            return numA.Length - numB.Length;
+                        }
+                        var cmp = string.CompareOrdinal(numA, numB);
+                        if (cmp != 0)
+                        {
+                            return cmp;
+                        }
+                    }
+                    else
+                    {
+                        var cmp = char.ToUpperInvariant(a[i]).CompareTo(char.ToUpperInvariant(b[j]));
+                        if (cmp != 0)
+                        {
+                            return cmp;
+                        }
+                        i++;
+                        j++;
+                    }
+                }
+                return (a.Length - i) - (b.Length - j);
             }
         }
 
@@ -147,7 +355,7 @@ namespace Teron_Addon_Manager
                 }
             }
 
-            var dialog = new AddonDetailsDialog(addon.Name, $"{addon.SourceKind} addon", fields, description) { Owner = this };
+            var dialog = new AddonDetailsDialog(addon.Name, $"{addon.SourceKind} addon", fields, description) { Owner = this, ThemeMode = ThemeMode };
             dialog.ShowDialog();
         }
 
@@ -173,6 +381,16 @@ namespace Teron_Addon_Manager
             }
         }
 
+        private void Addon_Manager_Closing(object? sender, CancelEventArgs e)
+        {
+            _uiSettings.ThemeMode = ThemeMode.ToString();
+            _uiSettings.AddonSortColumn = GetColumnName(_sortColumn);
+            _uiSettings.AddonSortDirection = _sortDirection?.ToString();
+            _uiSettings.SelectedGameTarget = _availableTargets.Count > 0 ? SelectedTarget : null;
+            _uiSettings.AddonManagerWindow = WindowPlacementHelper.Capture(this);
+            UiSettingsStore.Save(_uiSettings);
+        }
+
         private static string DisplayName(GameTarget target) => target == GameTarget.Ptr ? "ESO PTR" : "ESO Live";
 
         private GameTarget SelectedTarget =>
@@ -183,20 +401,66 @@ namespace Teron_Addon_Manager
         private async void Addon_Manager_Loaded(object sender, RoutedEventArgs e)
         {
             _availableTargets = AddonPaths.DetectInstalledTargets().ToList();
-            targetListBox.Items.Clear();
-            foreach (var target in _availableTargets)
+            var rows = _availableTargets.Select(t => new GameTargetRow { DisplayName = DisplayName(t) }).ToList();
+            targetListBox.ItemsSource = rows;
+            targetListBox.SelectionChanged += TargetListBox_SelectionChanged;
+            if (rows.Count > 0)
             {
-                targetListBox.Items.Add(DisplayName(target));
-            }
-            if (_availableTargets.Count > 0)
-            {
-                targetListBox.SelectedIndex = 0;
+                var savedTargetIndex = _uiSettings.SelectedGameTarget is { } savedTarget
+                    ? _availableTargets.IndexOf(savedTarget)
+                    : -1;
+                targetListBox.SelectedIndex = savedTargetIndex >= 0 ? savedTargetIndex : 0;
             }
 
             _addons = AddonLibrary.Load();
+
+            _sortColumn = GetColumnByName(_uiSettings.AddonSortColumn);
+            _sortDirection = _sortColumn is not null && Enum.TryParse<ListSortDirection>(_uiSettings.AddonSortDirection, out var savedDirection)
+                ? savedDirection
+                : null;
+            UpdateSortArrows();
+
             RefreshListView();
+
             await RunUpdateCheckAsync();
             await ScanForLocalAddonsAsync(isManualTrigger: false);
+        }
+
+        // The highlight on the selected row is driven by GameTargetRow.IsCurrent (a plain bound property)
+        // instead of the ListBox's native IsSelected, because a runtime ThemeMode switch (still
+        // experimental, WPF0001) permanently breaks IsSelected-triggered visuals for Selector controls —
+        // confirmed independent of brush/binding/resource choice and even of recreating the control
+        // entirely. A regular data binding isn't affected, so selection state is mirrored onto the data
+        // objects by hand here instead of relying on WPF to re-evaluate the trigger.
+        private void TargetListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            foreach (var row in e.RemovedItems.Cast<GameTargetRow>())
+            {
+                row.IsCurrent = false;
+            }
+            foreach (var row in e.AddedItems.Cast<GameTargetRow>())
+            {
+                row.IsCurrent = true;
+            }
+            RefreshListView();
+        }
+
+        private sealed class GameTargetRow : INotifyPropertyChanged
+        {
+            public required string DisplayName { get; init; }
+
+            private bool _isCurrent;
+            public bool IsCurrent
+            {
+                get => _isCurrent;
+                set
+                {
+                    _isCurrent = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCurrent)));
+                }
+            }
+
+            public event PropertyChangedEventHandler? PropertyChanged;
         }
 
         private IEnumerable<InstalledAddon> AddonsForSelectedTarget() =>
@@ -204,7 +468,31 @@ namespace Teron_Addon_Manager
 
         private void RefreshListView()
         {
-            addonListView.ItemsSource = AddonsForSelectedTarget().Select(CreateRow).ToList();
+            var rows = AddonsForSelectedTarget().Select(CreateRow);
+            rows = ApplySearch(rows);
+            addonListView.ItemsSource = ApplySort(rows).ToList();
+        }
+
+        private IEnumerable<AddonRow> ApplySearch(IEnumerable<AddonRow> rows)
+        {
+            var search = searchTextBox.Text.Trim();
+            return search.Length == 0
+                ? rows
+                : rows.Where(r => r.Name.Contains(search, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private void SearchTextBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                searchTextBox.Clear();
+                e.Handled = true;
+            }
+        }
+
+        private void UpdateSearchBoxWidth()
+        {
+            searchTextBox.Width = WindowState == WindowState.Maximized ? 420 : 240;
         }
 
         private static AddonRow CreateRow(InstalledAddon addon) => new()
@@ -227,7 +515,7 @@ namespace Teron_Addon_Manager
 
         private async void AddAddonButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new AddAddonDialog { Owner = this };
+            var dialog = new AddAddonDialog { Owner = this, ThemeMode = ThemeMode };
             if (dialog.ShowDialog() != true || dialog.ResultUrl is null)
             {
                 return;
@@ -378,7 +666,7 @@ namespace Teron_Addon_Manager
                     return;
                 }
 
-                var dialog = new ScanResultsDialog(candidates) { Owner = this };
+                var dialog = new ScanResultsDialog(candidates) { Owner = this, ThemeMode = ThemeMode };
                 if (dialog.ShowDialog() != true || dialog.AdoptedCandidates.Count == 0)
                 {
                     SetStatus($"Found {candidates.Count} local addon(s); none adopted.");
@@ -434,7 +722,7 @@ namespace Teron_Addon_Manager
 
         private async void BrowseMarketplaceButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new MarketplaceForm(_http) { Owner = this };
+            var dialog = new MarketplaceForm(_http, _uiSettings) { Owner = this, ThemeMode = ThemeMode };
             if (dialog.ShowDialog() != true || dialog.SelectedAddons.Count == 0)
             {
                 return;
@@ -501,22 +789,33 @@ namespace Teron_Addon_Manager
 
         private void SetBusy(bool busy, string? status = null)
         {
+            _busy = busy;
             Cursor = busy ? Cursors.Wait : Cursors.Arrow;
             addAddonButton.IsEnabled = !busy;
             checkUpdatesButton.IsEnabled = !busy;
-            updateSelectedButton.IsEnabled = !busy;
-            removeSelectedButton.IsEnabled = !busy;
             scanLocalButton.IsEnabled = !busy;
             browseMarketplaceButton.IsEnabled = !busy;
             checkSelectedContextItem.IsEnabled = !busy;
             updateSelectedContextItem.IsEnabled = !busy;
             removeSelectedContextItem.IsEnabled = !busy;
             targetListBox.IsEnabled = !busy;
+            UpdateSelectionDependentButtons();
             if (status is not null)
             {
                 SetStatus(status);
             }
         }
+
+        // Update/Remove only make sense with addons selected; keep them disabled otherwise instead of
+        // letting the user click into a "select something first" message box.
+        private void UpdateSelectionDependentButtons()
+        {
+            var enabled = !_busy && addonListView.SelectedItems.Count > 0;
+            updateSelectedButton.IsEnabled = enabled;
+            removeSelectedButton.IsEnabled = enabled;
+        }
+
+        private void AddonListView_SelectionChanged(object sender, SelectionChangedEventArgs e) => UpdateSelectionDependentButtons();
 
         private void SetStatus(string text) => statusLabel.Text = text;
 

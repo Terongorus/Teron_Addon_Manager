@@ -13,50 +13,72 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="16,16,16,8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="180"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="160"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="140"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Search:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <TextBox Grid.Column="1" x:Name="searchTextBox" Height="30" VerticalContentAlignment="Center" Margin="0,0,16,0"/>
-            <TextBlock Grid.Column="2" Text="Category:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <ComboBox Grid.Column="3" x:Name="categoryComboBox" Height="30" Margin="0,0,16,0"/>
-            <TextBlock Grid.Column="4" Text="Sort by:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <ComboBox Grid.Column="5" x:Name="sortComboBox" Height="30"/>
-            <Button Grid.Column="7" x:Name="refreshButton" Content="Refresh Catalog" Width="130" Height="30"/>
-        </Grid>
+        <Border Grid.Row="0" Style="{StaticResource CardBorderStyle}" Margin="12,12,12,8" Padding="12,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBox x:Name="searchTextBox" Width="180" Height="30" VerticalContentAlignment="Center"/>
+                    <TextBlock Text="Search" IsHitTestVisible="False" VerticalAlignment="Center" Margin="10,0,0,0" Opacity="0.5">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding Text, ElementName=searchTextBox}" Value=""/>
+                                            <Condition Binding="{Binding IsFocused, ElementName=searchTextBox}" Value="False"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+                <TextBlock Grid.Column="1" Text="Category:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox Grid.Column="2" x:Name="categoryComboBox" Height="30" Width="160" Margin="0,0,16,0"/>
+                <TextBlock Grid.Column="3" Text="Sort by:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox Grid.Column="4" x:Name="sortComboBox" Height="30" Width="140"/>
+                <Button Grid.Column="6" x:Name="refreshButton" Style="{StaticResource ToolbarIconButtonStyle}" ToolTip="Refresh Catalog">
+                    <TextBlock Text="&#xE895;"/>
+                </Button>
+            </Grid>
+        </Border>
 
-        <ListView Grid.Row="1" x:Name="resultsListView" Margin="16,0,16,8" SelectionMode="Extended">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="Title" Width="220" DisplayMemberBinding="{Binding Title}"/>
-                    <GridViewColumn Header="Author" Width="140" DisplayMemberBinding="{Binding Author}"/>
-                    <GridViewColumn Header="Category" Width="150" DisplayMemberBinding="{Binding CategoryTitle}"/>
-                    <GridViewColumn Header="Downloads" Width="90" DisplayMemberBinding="{Binding DownloadsText}"/>
-                    <GridViewColumn Header="Last Updated" Width="100" DisplayMemberBinding="{Binding LastUpdatedText}"/>
-                </GridView>
-            </ListView.View>
-            <ListView.ContextMenu>
-                <ContextMenu>
-                    <MenuItem x:Name="viewDetailsContextItem" Header="View Details..."/>
-                    <MenuItem x:Name="installContextItem" Header="Install Selected"/>
-                </ContextMenu>
-            </ListView.ContextMenu>
-        </ListView>
+        <Border Grid.Row="1" Style="{StaticResource CardBorderStyle}" Margin="12,0,12,8" Padding="4">
+            <ListView x:Name="resultsListView" SelectionMode="Extended">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Title" Width="220" DisplayMemberBinding="{Binding Title}"/>
+                        <GridViewColumn Header="Author" Width="140" DisplayMemberBinding="{Binding Author}"/>
+                        <GridViewColumn Header="Category" Width="150" DisplayMemberBinding="{Binding CategoryTitle}"/>
+                        <GridViewColumn Header="Downloads" Width="90" DisplayMemberBinding="{Binding DownloadsText}"/>
+                        <GridViewColumn Header="Last Updated" Width="100" DisplayMemberBinding="{Binding LastUpdatedText}"/>
+                    </GridView>
+                </ListView.View>
+                <ListView.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem x:Name="viewDetailsContextItem" Header="View Details..."/>
+                        <MenuItem x:Name="installContextItem" Header="Install Selected"/>
+                    </ContextMenu>
+                </ListView.ContextMenu>
+            </ListView>
+        </Border>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="16,0,16,12">
-            <Button x:Name="closeButton" Content="Close" Width="90" Height="32" Margin="0,0,8,0" IsCancel="True"/>
-            <Button x:Name="installButton" Content="Install Selected" Width="140" Height="32"/>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="12,0,12,8">
+            <Button x:Name="installButton" Content="Install Selected" Width="140" Height="32" Margin="0,0,8,0" IsEnabled="False"/>
+            <Button x:Name="closeButton" Content="Close" Width="90" Height="32" IsCancel="True"/>
         </StackPanel>
 
-        <Border Grid.Row="3" BorderThickness="0,1,0,0" BorderBrush="#33808080" Padding="12,6">
+        <Border Grid.Row="3" BorderThickness="0,1,0,0" BorderBrush="{StaticResource DividerBrush}" Padding="12,6">
             <TextBlock x:Name="statusText" Text="Loading..."/>
         </Border>
     </Grid>

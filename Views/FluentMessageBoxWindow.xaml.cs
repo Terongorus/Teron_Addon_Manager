@@ -64,6 +64,7 @@ namespace Teron_Addon_Manager
             if (owner is not null)
             {
                 dialog.Owner = owner;
+                dialog.ThemeMode = owner.ThemeMode;
             }
             return dialog.ShowDialog() == true;
         }

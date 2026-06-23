@@ -1,6 +1,8 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Teron_Addon_Manager.Helpers;
 using Teron_Addon_Manager.Models;
 using Teron_Addon_Manager.Services;
 using Teron_Addon_Manager.Sources;
@@ -11,23 +13,33 @@ namespace Teron_Addon_Manager
     public partial class MarketplaceForm : Window
     {
         private readonly HttpClient _http;
+        private readonly UiSettings _uiSettings;
         private readonly EsoUiCatalogService _catalogService = new();
         private List<EsoUiCatalogEntry> _allEntries = new();
         private Dictionary<long, string> _categoryTitles = new();
+        private bool _busy;
 
         public List<EsoUiCatalogEntry> SelectedAddons { get; private set; } = new();
 
-        public MarketplaceForm(HttpClient http)
+        public MarketplaceForm(HttpClient http, UiSettings uiSettings)
         {
             InitializeComponent();
             _http = http;
+            _uiSettings = uiSettings;
+
+            WindowPlacementHelper.Apply(this, _uiSettings.MarketplaceWindow);
+            Closing += MarketplaceForm_Closing;
+            StateChanged += (_, _) => UpdateToolbarWidths();
+            UpdateToolbarWidths();
 
             sortComboBox.Items.Add("Name (A-Z)");
+            sortComboBox.Items.Add("Name (Z-A)");
             sortComboBox.Items.Add("Last Updated (Newest)");
             sortComboBox.Items.Add("Most Downloaded");
             sortComboBox.SelectedIndex = 0;
 
             searchTextBox.TextChanged += (_, _) => ApplyFilters();
+            searchTextBox.KeyDown += SearchTextBox_KeyDown;
             categoryComboBox.SelectionChanged += (_, _) => ApplyFilters();
             sortComboBox.SelectionChanged += (_, _) => ApplyFilters();
             refreshButton.Click += async (_, _) => await LoadCatalogAsync(forceRefresh: true);
@@ -35,8 +47,34 @@ namespace Teron_Addon_Manager
             installContextItem.Click += InstallButton_Click;
             viewDetailsContextItem.Click += ViewDetailsContextItem_Click;
             resultsListView.PreviewMouseRightButtonDown += ResultsListView_PreviewMouseRightButtonDown;
+            resultsListView.PreviewMouseLeftButtonDown += ResultsListView_PreviewMouseLeftButtonDown;
             resultsListView.KeyDown += ResultsListView_KeyDown;
+            resultsListView.SelectionChanged += (_, _) => UpdateSelectionDependentButtons();
+            GridViewAutoFit.Attach(this, resultsListView);
             Loaded += async (_, _) => await LoadCatalogAsync(forceRefresh: false);
+        }
+
+        private void MarketplaceForm_Closing(object? sender, CancelEventArgs e)
+        {
+            _uiSettings.MarketplaceWindow = WindowPlacementHelper.Capture(this);
+            UiSettingsStore.Save(_uiSettings);
+        }
+
+        private void UpdateToolbarWidths()
+        {
+            var maximized = WindowState == WindowState.Maximized;
+            searchTextBox.Width = maximized ? 320 : 180;
+            categoryComboBox.Width = maximized ? 280 : 160;
+            sortComboBox.Width = maximized ? 240 : 140;
+        }
+
+        private void SearchTextBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                searchTextBox.Clear();
+                e.Handled = true;
+            }
         }
 
         private void ResultsListView_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -44,6 +82,11 @@ namespace Teron_Addon_Manager
             if (System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control && e.Key == System.Windows.Input.Key.A)
             {
                 resultsListView.SelectAll();
+                e.Handled = true;
+            }
+            else if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                resultsListView.SelectedItems.Clear();
                 e.Handled = true;
             }
         }
@@ -59,6 +102,25 @@ namespace Teron_Addon_Manager
             }
             resultsListView.SelectedItems.Clear();
             item.IsSelected = true;
+        }
+
+        // WPF's default Selector behavior has no way to get back to "nothing selected" once a row is
+        // selected: clicking empty space leaves the old selection alone, and re-clicking the same row is a
+        // no-op. Both are handled explicitly here, matching Addon_Manager's addonListView.
+        private void ResultsListView_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var item = FindAncestor<System.Windows.Controls.ListViewItem>(e.OriginalSource as DependencyObject);
+            if (item is null)
+            {
+                resultsListView.SelectedItems.Clear();
+                return;
+            }
+
+            if (item.IsSelected && System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.None)
+            {
+                item.IsSelected = false;
+                e.Handled = true;
+            }
         }
 
         private static T? FindAncestor<T>(DependencyObject? current) where T : DependencyObject
@@ -110,7 +172,7 @@ namespace Teron_Addon_Manager
                 SetBusy(false);
             }
 
-            var dialog = new AddonDetailsDialog(entry.Title, "ESOUI marketplace listing", fields, description) { Owner = this };
+            var dialog = new AddonDetailsDialog(entry.Title, "ESOUI marketplace listing", fields, description) { Owner = this, ThemeMode = ThemeMode };
             dialog.ShowDialog();
         }
 
@@ -165,8 +227,9 @@ namespace Teron_Addon_Manager
 
             query = sortComboBox.SelectedIndex switch
             {
-                1 => query.OrderByDescending(e => e.LastUpdate ?? DateTimeOffset.MinValue),
-                2 => query.OrderByDescending(e => e.Downloads),
+                1 => query.OrderByDescending(e => e.Title, StringComparer.OrdinalIgnoreCase),
+                2 => query.OrderByDescending(e => e.LastUpdate ?? DateTimeOffset.MinValue),
+                3 => query.OrderByDescending(e => e.Downloads),
                 _ => query.OrderBy(e => e.Title, StringComparer.OrdinalIgnoreCase)
             };
 
@@ -199,14 +262,22 @@ namespace Teron_Addon_Manager
 
         private void SetBusy(bool busy, string? status = null)
         {
+            _busy = busy;
             Cursor = busy ? Cursors.Wait : Cursors.Arrow;
-            installButton.IsEnabled = !busy;
             installContextItem.IsEnabled = !busy;
             refreshButton.IsEnabled = !busy;
+            UpdateSelectionDependentButtons();
             if (status is not null)
             {
                 statusText.Text = status;
             }
+        }
+
+        // Install only makes sense with addons selected; keep it disabled otherwise instead of letting the
+        // user click into a "select something first" message box (same fix as Addon_Manager's toolbar).
+        private void UpdateSelectionDependentButtons()
+        {
+            installButton.IsEnabled = !_busy && resultsListView.SelectedItems.Count > 0;
         }
 
         private sealed class MarketplaceRow

@@ -6,11 +6,11 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>1.1.0</Version>
+    <Version>2.4.0</Version>
     <AssemblyTitle>TeronAddonManager</AssemblyTitle>
-    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
     <!-- WPF0001: ThemeMode runtime switching (Light/Dark/System toggle) is still an experimental API. -->
-    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+    <NoWarn>$(NoWarn);WPF0001;</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -22,7 +22,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="app.ico" />
+    <Content Include="Resources\app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="App.xaml" />
   </ItemGroup>
 
 </Project>
