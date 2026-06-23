@@ -1,0 +1,34 @@
+<Window x:Class="Teron_Addon_Manager.ScanResultsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Local Addons Found"
+        Width="560" Height="480"
+        MinWidth="420" MinHeight="320"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <GroupBox Grid.Row="0" x:Name="matchedGroupBox" Header="Found matches" Margin="0,0,0,12">
+            <ListBox x:Name="matchedListBox" BorderThickness="0">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <CheckBox Content="{Binding DisplayText}" IsChecked="{Binding IsChecked}" Margin="2"/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </GroupBox>
+
+        <GroupBox Grid.Row="1" x:Name="unmatchedGroupBox" Header="Found but not matched to ESOUI">
+            <ListBox x:Name="unmatchedListBox" BorderThickness="0"/>
+        </GroupBox>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button x:Name="skipButton" Content="Skip" Width="90" Height="32" Margin="0,0,8,0" IsCancel="True"/>
+            <Button x:Name="adoptButton" Content="Adopt Selected" Width="140" Height="32" IsDefault="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

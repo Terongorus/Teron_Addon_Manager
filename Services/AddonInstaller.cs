@@ -75,8 +75,6 @@ namespace Teron_Addon_Manager.Services
         private async Task<(List<string> FolderNames, string Hash)> DownloadAndExtractAsync(
             AddonManifest manifest, GameTarget target, IProgress<string>? progress, CancellationToken ct)
         {
-            AddonPaths.EnsureFoldersExist(target);
-
             var tempZip = Path.Combine(Path.GetTempPath(), $"teron-addon-{Guid.NewGuid():N}.zip");
             var tempExtractDir = Path.Combine(Path.GetTempPath(), $"teron-addon-{Guid.NewGuid():N}");
 
