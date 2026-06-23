@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow major.minor.hotfix (e.g. 1.2.3).
 
+## [2.4.0] - 2026-06-23
+
+### Added
+
+- A live search box in the main window's toolbar filters the installed-addon list by name as you type. It shows "Search" as placeholder text when empty and unfocused (like a browser's address bar), and pressing Escape while it's focused clears it.
+- The Marketplace browser's existing search box now behaves the same way: the separate "Search:" label is gone in favor of placeholder text, and Escape clears it while focused.
+- Both windows' toolbar controls now widen automatically when the window is maximized instead of leaving a large empty gap: the main window's search box, and the Marketplace's search box, category filter, and sort dropdown all grow proportionally, then return to their normal size when the window is restored.
+
+## [2.3.0] - 2026-06-23
+
+### Added
+
+- The app now remembers your theme choice, the main addon list's column sort, both windows' positions (and whether they were maximized), and the selected game version, restoring all of it the next time you open the app, in a new `%AppData%\Teron_Addon_Manager\uisettings.json` file.
+- Marketplace's search/category/sort filters are intentionally left out of what's remembered, so the browser always opens unfiltered; the "Scan for Local Addons" and "Addon Details" dialogs also keep their original default positioning rather than being persisted.
+
+## [2.2.1] - 2026-06-23
+
+### Fixed
+
+- Clicking empty space below the addon list, pressing Escape, or clicking an already-selected row again now all deselect, matching how Windows' own list and Explorer views behave. Previously, once a row was selected there was no way to get back to "nothing selected." The same fix was applied to the Marketplace's results list.
+
+## [2.2.0] - 2026-06-23
+
+### Added
+
+- The main addon list's columns (Name, Installed, Latest, Status, Source) can now be sorted by clicking their headers, cycling through ascending, descending, and the original order, with an arrow indicator showing the current direction.
+- The Marketplace's sort dropdown gained a descending "Name (Z-A)" option alongside the existing ascending one.
+- "Update Selected" and "Remove Selected" are now disabled whenever nothing is selected, instead of being clickable with nothing to act on.
+- When either window is maximized, its list's columns now stretch to fill the extra width instead of leaving it empty; they return to their normal widths when the window isn't maximized.
+
+## [2.1.1] - 2026-06-23
+
+### Fixed
+
+- The addon list's Status badges now use separate color palettes for light and dark mode, so they stay readable in both instead of washing out in dark mode.
+- The theme picker's unselected segments (e.g. "Light" and "System" while "Dark" is active) could become unreadable after switching themes a second time — their text color is now recalculated against the theme that's actually active instead of going stale.
+
+## [2.1.0] - 2026-06-23
+
+### Changed
+
+- The main window and the Marketplace browser both got a modernized Windows 11-style visual pass to match the new Fluent look introduced in 2.0.0: card-style panels around the toolbar and lists, softer divider and hover colors, and the toolbar's actions reworked into a single row of icon buttons with tooltips instead of text buttons.
+- Added a System/Light/Dark theme picker to the main window's toolbar; choosing one applies immediately and is shared with every dialog opened afterward.
+
+## [2.0.0] - 2026-06-23
+
+### Changed
+
+- **Migrated the entire UI from WinForms to WPF**, adopting .NET's built-in Windows 11 Fluent theme. This is a major rewrite of every window and dialog (main window, Marketplace browser, Add Addon, Addon Details, Scan Results) from WinForms Designer/resx files to XAML with code-behind, plus a new Fluent-styled message box replacing the WinForms one. No third-party packages were added — the Fluent theme and everything else used here ships with the .NET 10 desktop runtime, keeping the project's "base class library only" approach intact.
+- The Addon Details dialog's content (descriptions, images, code blocks) now reflows using WPF's native layout instead of the hand-built resize-callback system the WinForms version needed — text and lists use the available width, while images and code blocks keep their natural size, with less code and more reliable behavior than before.
+
 ## [1.1.0] - 2026-06-22
 
 ### Added

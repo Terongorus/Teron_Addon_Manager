@@ -1,6 +1,8 @@
+using System.Windows;
+
 namespace Teron_Addon_Manager
 {
-    public partial class AddAddonDialog : Form
+    public partial class AddAddonDialog : Window
     {
         public Uri? ResultUrl { get; private set; }
 
@@ -10,19 +12,18 @@ namespace Teron_Addon_Manager
             okButton.Click += OkButton_Click;
         }
 
-        private void OkButton_Click(object? sender, EventArgs e)
+        private void OkButton_Click(object sender, RoutedEventArgs e)
         {
             var text = urlTextBox.Text.Trim();
             if (!Uri.TryCreate(text, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
             {
-                MessageBox.Show(this, "Enter a valid http(s) URL to the addon's page or download archive.",
-                    "Invalid URL", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                DialogResult = DialogResult.None;
+                FluentMessageBox.Show(this, "Enter a valid http(s) URL to the addon's page or download archive.",
+                    "Invalid URL", icon: FluentMessageBoxIcon.Warning);
                 return;
             }
 
             ResultUrl = uri;
-            DialogResult = DialogResult.OK;
+            DialogResult = true;
         }
     }
 }
