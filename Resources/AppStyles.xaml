@@ -12,7 +12,9 @@
     <SolidColorBrush x:Key="CardBackgroundBrush" Color="#14808080"/>
     <SolidColorBrush x:Key="DividerBrush" Color="#33808080"/>
     <SolidColorBrush x:Key="HoverOverlayBrush" Color="#1F808080"/>
-    <SolidColorBrush x:Key="HeaderHoverBrush" Color="#14808080"/>
+    <SolidColorBrush x:Key="HeaderHoverBrush" Color="#2E808080"/>
+    <SolidColorBrush x:Key="ColumnHeaderBackgroundBrush" Color="#1F808080"/>
+    <SolidColorBrush x:Key="ColumnHeaderBorderBrush" Color="#55808080"/>
     <local:SelectedHighlightConverter x:Key="SelectedHighlightConverter"/>
     <local:SelectedForegroundConverter x:Key="SelectedForegroundConverter"/>
 
@@ -97,8 +99,8 @@
     <!-- Flat, modern GridView column headers: bottom rule instead of the classic raised button chrome,
          with a slim resize gripper kept functional but visually unobtrusive. -->
     <Style TargetType="{x:Type GridViewColumnHeader}" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="Background" Value="{StaticResource ColumnHeaderBackgroundBrush}"/>
+        <Setter Property="Padding" Value="10,10"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="Template">
@@ -106,7 +108,7 @@
                 <ControlTemplate TargetType="{x:Type GridViewColumnHeader}">
                     <Grid>
                         <Border x:Name="HeaderBorder" Background="{TemplateBinding Background}"
-                                BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1"
+                                BorderBrush="{StaticResource ColumnHeaderBorderBrush}" BorderThickness="0,0,0,2"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                                VerticalAlignment="Center" RecognizesAccessKey="True"/>

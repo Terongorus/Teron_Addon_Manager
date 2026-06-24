@@ -14,18 +14,26 @@ namespace Teron_Addon_Manager
     {
         private readonly HttpClient _http;
         private readonly UiSettings _uiSettings;
+        private readonly Func<EsoUiCatalogEntry, bool> _isInstalled;
+        private readonly Func<EsoUiCatalogEntry, Task<(bool Success, string Message)>> _installAsync;
+        private readonly Func<EsoUiCatalogEntry, (bool Success, string Message)> _uninstall;
         private readonly EsoUiCatalogService _catalogService = new();
         private List<EsoUiCatalogEntry> _allEntries = new();
         private Dictionary<long, string> _categoryTitles = new();
-        private bool _busy;
 
-        public List<EsoUiCatalogEntry> SelectedAddons { get; private set; } = new();
-
-        public MarketplaceForm(HttpClient http, UiSettings uiSettings)
+        public MarketplaceForm(
+            HttpClient http,
+            UiSettings uiSettings,
+            Func<EsoUiCatalogEntry, bool> isInstalled,
+            Func<EsoUiCatalogEntry, Task<(bool Success, string Message)>> installAsync,
+            Func<EsoUiCatalogEntry, (bool Success, string Message)> uninstall)
         {
             InitializeComponent();
             _http = http;
             _uiSettings = uiSettings;
+            _isInstalled = isInstalled;
+            _installAsync = installAsync;
+            _uninstall = uninstall;
 
             WindowPlacementHelper.Apply(this, _uiSettings.MarketplaceWindow);
             Closing += MarketplaceForm_Closing;
@@ -43,13 +51,10 @@ namespace Teron_Addon_Manager
             categoryComboBox.SelectionChanged += (_, _) => ApplyFilters();
             sortComboBox.SelectionChanged += (_, _) => ApplyFilters();
             refreshButton.Click += async (_, _) => await LoadCatalogAsync(forceRefresh: true);
-            installButton.Click += InstallButton_Click;
-            installContextItem.Click += InstallButton_Click;
             viewDetailsContextItem.Click += ViewDetailsContextItem_Click;
             resultsListView.PreviewMouseRightButtonDown += ResultsListView_PreviewMouseRightButtonDown;
             resultsListView.PreviewMouseLeftButtonDown += ResultsListView_PreviewMouseLeftButtonDown;
             resultsListView.KeyDown += ResultsListView_KeyDown;
-            resultsListView.SelectionChanged += (_, _) => UpdateSelectionDependentButtons();
             GridViewAutoFit.Attach(this, resultsListView);
             Loaded += async (_, _) => await LoadCatalogAsync(forceRefresh: false);
         }
@@ -240,47 +245,80 @@ namespace Teron_Addon_Manager
                 Author = entry.Author,
                 CategoryTitle = _categoryTitles.TryGetValue(entry.CategoryId, out var title) ? title : "",
                 DownloadsText = entry.Downloads.ToString("N0"),
-                LastUpdatedText = entry.LastUpdate?.ToString("yyyy-MM-dd") ?? ""
+                LastUpdatedText = entry.LastUpdate?.ToString("yyyy-MM-dd") ?? "",
+                IsInstalled = _isInstalled(entry)
             }).ToList();
 
             resultsListView.ItemsSource = rows;
             statusText.Text = $"Showing {rows.Count} of {_allEntries.Count} addons.";
         }
 
-        private void InstallButton_Click(object sender, RoutedEventArgs e)
+        private async void InstallRowButton_Click(object sender, RoutedEventArgs e)
         {
-            var selected = resultsListView.SelectedItems.Cast<MarketplaceRow>().Select(r => r.Entry).ToList();
-            if (selected.Count == 0)
+            var button = (Button)sender;
+            var row = (MarketplaceRow)button.DataContext;
+
+            if (row.IsInstalled)
             {
-                FluentMessageBox.Show(this, "Select one or more addons to install.", "Install");
+                var confirmed = FluentMessageBox.Show(this, $"Remove {row.Title} and delete its files from the AddOns folder?",
+                    "Confirm Remove", FluentMessageBoxButtons.YesNo, FluentMessageBoxIcon.Warning);
+                if (!confirmed)
+                {
+                    return;
+                }
+
+                button.IsEnabled = false;
+                try
+                {
+                    var (success, message) = _uninstall(row.Entry);
+                    statusText.Text = message;
+                    if (success)
+                    {
+                        row.IsInstalled = false;
+                    }
+                    else
+                    {
+                        FluentMessageBox.Show(this, message, "Remove failed", icon: FluentMessageBoxIcon.Error);
+                    }
+                }
+                finally
+                {
+                    button.IsEnabled = true;
+                }
                 return;
             }
 
-            SelectedAddons = selected;
-            DialogResult = true;
+            button.IsEnabled = false;
+            try
+            {
+                var (success, message) = await _installAsync(row.Entry);
+                statusText.Text = message;
+                if (success)
+                {
+                    row.IsInstalled = true;
+                }
+                else
+                {
+                    FluentMessageBox.Show(this, message, "Install failed", icon: FluentMessageBoxIcon.Error);
+                }
+            }
+            finally
+            {
+                button.IsEnabled = true;
+            }
         }
 
         private void SetBusy(bool busy, string? status = null)
         {
-            _busy = busy;
             Cursor = busy ? Cursors.Wait : Cursors.Arrow;
-            installContextItem.IsEnabled = !busy;
             refreshButton.IsEnabled = !busy;
-            UpdateSelectionDependentButtons();
             if (status is not null)
             {
                 statusText.Text = status;
             }
         }
 
-        // Install only makes sense with addons selected; keep it disabled otherwise instead of letting the
-        // user click into a "select something first" message box (same fix as Addon_Manager's toolbar).
-        private void UpdateSelectionDependentButtons()
-        {
-            installButton.IsEnabled = !_busy && resultsListView.SelectedItems.Count > 0;
-        }
-
-        private sealed class MarketplaceRow
+        private sealed class MarketplaceRow : INotifyPropertyChanged
         {
             public required EsoUiCatalogEntry Entry { get; init; }
             public required string Title { get; init; }
@@ -288,6 +326,23 @@ namespace Teron_Addon_Manager
             public required string CategoryTitle { get; init; }
             public required string DownloadsText { get; init; }
             public required string LastUpdatedText { get; init; }
+
+            private bool _isInstalled;
+            public bool IsInstalled
+            {
+                get => _isInstalled;
+                set
+                {
+                    if (_isInstalled == value)
+                    {
+                        return;
+                    }
+                    _isInstalled = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsInstalled)));
+                }
+            }
+
+            public event PropertyChangedEventHandler? PropertyChanged;
         }
     }
 }

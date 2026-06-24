@@ -5,6 +5,22 @@
         Width="900" Height="560"
         MinWidth="700" MinHeight="360"
         WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <Style x:Key="MarketplaceInstallButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="96"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Content" Value="Install"/>
+            <Setter Property="Background" Value="#2EA05A"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsInstalled}" Value="True">
+                    <Setter Property="Content" Value="Uninstall"/>
+                    <Setter Property="Background" Value="#C24343"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -62,19 +78,24 @@
                         <GridViewColumn Header="Category" Width="150" DisplayMemberBinding="{Binding CategoryTitle}"/>
                         <GridViewColumn Header="Downloads" Width="90" DisplayMemberBinding="{Binding DownloadsText}"/>
                         <GridViewColumn Header="Last Updated" Width="100" DisplayMemberBinding="{Binding LastUpdatedText}"/>
+                        <GridViewColumn Header="" Width="116">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource MarketplaceInstallButtonStyle}" Click="InstallRowButton_Click"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
                     </GridView>
                 </ListView.View>
                 <ListView.ContextMenu>
                     <ContextMenu>
                         <MenuItem x:Name="viewDetailsContextItem" Header="View Details..."/>
-                        <MenuItem x:Name="installContextItem" Header="Install Selected"/>
                     </ContextMenu>
                 </ListView.ContextMenu>
             </ListView>
         </Border>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="12,0,12,8">
-            <Button x:Name="installButton" Content="Install Selected" Width="140" Height="32" Margin="0,0,8,0" IsEnabled="False"/>
             <Button x:Name="closeButton" Content="Close" Width="90" Height="32" IsCancel="True"/>
         </StackPanel>
 
