@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow major.minor.hotfix (e.g. 1.2.3).
 
+## [2.4.1] - 2026-06-23
+
+### Changed
+
+- The Marketplace browser no longer closes after installing an addon. Each result row now has its own Install button that installs just that addon and turns into an Uninstall button once it's tracked, replacing the old "select rows, then click one shared Install Selected button that closed the window" flow. A status message confirms each install or removal instead of a popup.
+
+### Fixed
+
+- Window position was being remembered across restarts, but width and height weren't — both the main window and the Marketplace browser always reopened at their default size unless maximized. They're now saved and restored too, including a related fix so that un-maximizing a window that was closed while maximized correctly returns it to its last manually-sized dimensions instead of the application default.
+
 ## [2.4.0] - 2026-06-23
 
 ### Added

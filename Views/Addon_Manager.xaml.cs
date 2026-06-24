@@ -720,53 +720,77 @@ namespace Teron_Addon_Manager
             }
         }
 
-        private async void BrowseMarketplaceButton_Click(object sender, RoutedEventArgs e)
+        private void BrowseMarketplaceButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new MarketplaceForm(_http, _uiSettings) { Owner = this, ThemeMode = ThemeMode };
-            if (dialog.ShowDialog() != true || dialog.SelectedAddons.Count == 0)
+            var dialog = new MarketplaceForm(_http, _uiSettings, IsMarketplaceEntryInstalled, InstallMarketplaceEntryAsync, UninstallMarketplaceEntry)
             {
-                return;
-            }
+                Owner = this,
+                ThemeMode = ThemeMode
+            };
+            dialog.ShowDialog();
+            RefreshListView();
+        }
 
+        private InstalledAddon? FindInstalledAddonForEntry(EsoUiCatalogEntry entry)
+        {
             var target = SelectedTarget;
-            SetBusy(true, "Installing from marketplace...");
+            return _addons.FirstOrDefault(a =>
+                a.Target == target &&
+                (a.SourceUrl == entry.FileInfoUri || a.FolderNames.Intersect(entry.FolderPaths, StringComparer.OrdinalIgnoreCase).Any()));
+        }
+
+        private bool IsMarketplaceEntryInstalled(EsoUiCatalogEntry entry) => FindInstalledAddonForEntry(entry) is not null;
+
+        private async Task<(bool Success, string Message)> InstallMarketplaceEntryAsync(EsoUiCatalogEntry entry)
+        {
+            var target = SelectedTarget;
             try
             {
-                foreach (var entry in dialog.SelectedAddons)
+                var addon = await _installer.InstallAsync(new Uri(entry.FileInfoUri), target, null, CancellationToken.None);
+
+                // The install already wrote addon.FolderNames to disk, possibly overwriting a folder some
+                // other tracked addon claims. Re-point tracking to the new source rather than duplicate it.
+                var replacedMessage = "";
+                if (TryFindFolderConflict(target, addon.FolderNames, out _))
                 {
-                    SetStatus($"Installing {entry.Title}...");
-                    try
+                    var replaced = _addons.Where(a => a.Target == target && a.FolderNames.Intersect(addon.FolderNames, StringComparer.OrdinalIgnoreCase).Any()).ToList();
+                    foreach (var old in replaced)
                     {
-                        var addon = await _installer.InstallAsync(new Uri(entry.FileInfoUri), target, new Progress<string>(SetStatus), CancellationToken.None);
-
-                        // The install already wrote addon.FolderNames to disk, possibly overwriting a folder some
-                        // other tracked addon claims. Re-point tracking to the new source rather than duplicate it.
-                        if (TryFindFolderConflict(target, addon.FolderNames, out _, excluding: null))
-                        {
-                            var replaced = _addons.Where(a => a.Target == target && a.FolderNames.Intersect(addon.FolderNames, StringComparer.OrdinalIgnoreCase).Any()).ToList();
-                            foreach (var old in replaced)
-                            {
-                                _addons.Remove(old);
-                            }
-                            FluentMessageBox.Show(this,
-                                $"'{entry.Title}' shares a folder with {string.Join(", ", replaced.Select(a => a.Name))}, which was already tracked. Replaced it with the marketplace install.",
-                                "Install", icon: FluentMessageBoxIcon.Warning);
-                        }
-
-                        _addons.Add(addon);
+                        _addons.Remove(old);
                     }
-                    catch (Exception ex)
-                    {
-                        FluentMessageBox.Show(this, $"Failed to install {entry.Title}: {ex.Message}", "Install failed", icon: FluentMessageBoxIcon.Error);
-                    }
+                    replacedMessage = $" (replaced previously tracked {string.Join(", ", replaced.Select(a => a.Name))})";
                 }
+
+                _addons.Add(addon);
                 AddonLibrary.Save(_addons);
                 RefreshListView();
-                SetStatus($"Installed {dialog.SelectedAddons.Count} addon(s) from the marketplace.");
+                return (true, $"Installed {addon.Name} {addon.InstalledVersion}.{replacedMessage}");
             }
-            finally
+            catch (Exception ex)
             {
-                SetBusy(false);
+                return (false, $"Failed to install {entry.Title}: {ex.Message}");
+            }
+        }
+
+        private (bool Success, string Message) UninstallMarketplaceEntry(EsoUiCatalogEntry entry)
+        {
+            var addon = FindInstalledAddonForEntry(entry);
+            if (addon is null)
+            {
+                return (false, $"{entry.Title} is not currently installed.");
+            }
+
+            try
+            {
+                _installer.Remove(addon);
+                _addons.Remove(addon);
+                AddonLibrary.Save(_addons);
+                RefreshListView();
+                return (true, $"Removed {addon.Name}.");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to remove {addon.Name}: {ex.Message}");
             }
         }
 

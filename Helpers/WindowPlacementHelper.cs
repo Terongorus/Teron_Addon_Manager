@@ -3,8 +3,6 @@ using Teron_Addon_Manager.Models;
 
 namespace Teron_Addon_Manager.Helpers
 {
-    // Restoring/capturing window position only matters when the window isn't maximized — a maximized
-    // window's Left/Top is just whatever the OS snapped it to, not something the user actually placed.
     internal static class WindowPlacementHelper
     {
         public static void Apply(Window window, WindowPlacement? placement)
@@ -14,10 +12,10 @@ namespace Teron_Addon_Manager.Helpers
                 return;
             }
 
-            if (placement.IsMaximized)
+            if (placement.Width > 0 && placement.Height > 0)
             {
-                window.WindowState = WindowState.Maximized;
-                return;
+                window.Width = Math.Min(placement.Width, SystemParameters.VirtualScreenWidth);
+                window.Height = Math.Min(placement.Height, SystemParameters.VirtualScreenHeight);
             }
 
             if (IsOnScreen(placement.Left, placement.Top))
@@ -28,16 +26,32 @@ namespace Teron_Addon_Manager.Helpers
                 window.Left = placement.Left;
                 window.Top = placement.Top;
             }
+
+            // Applied last, after the bounds above, so that un-maximizing later restores to the saved
+            // size/position instead of whatever WPF would default to.
+            if (placement.IsMaximized)
+            {
+                window.WindowState = WindowState.Maximized;
+            }
         }
 
         public static WindowPlacement Capture(Window window)
         {
             var maximized = window.WindowState == WindowState.Maximized;
+
+            // RestoreBounds holds the size/position the window would return to when un-maximized; Left/Top/
+            // Width/Height while actually maximized just reflect whatever the OS snapped it to.
+            var bounds = maximized
+                ? window.RestoreBounds
+                : new Rect(window.Left, window.Top, window.Width, window.Height);
+
             return new WindowPlacement
             {
                 IsMaximized = maximized,
-                Left = maximized ? 0 : window.Left,
-                Top = maximized ? 0 : window.Top
+                Left = bounds.Left,
+                Top = bounds.Top,
+                Width = bounds.Width,
+                Height = bounds.Height
             };
         }
 
