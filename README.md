@@ -46,7 +46,7 @@ The project is a standard .NET WPF app (`net10.0-windows`) with no third-party N
 
 ## Project status
 
-Version 2.4.1. See [CHANGELOG.md](CHANGELOG.md) for the full history. Versions follow `major.minor.hotfix`.
+Version 2.5.0. See [CHANGELOG.md](CHANGELOG.md) for the full history. Versions follow `major.minor.hotfix`.
 
 ## License
 

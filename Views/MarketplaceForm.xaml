@@ -7,12 +7,16 @@
         WindowStartupLocation="CenterOwner">
     <Window.Resources>
         <Style x:Key="MarketplaceInstallButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="84"/>
-            <Setter Property="Height" Value="26"/>
+            <Setter Property="Width" Value="96"/>
+            <Setter Property="Height" Value="30"/>
             <Setter Property="Content" Value="Install"/>
+            <Setter Property="Background" Value="#2EA05A"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsInstalled}" Value="True">
                     <Setter Property="Content" Value="Uninstall"/>
+                    <Setter Property="Background" Value="#C24343"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -74,7 +78,7 @@
                         <GridViewColumn Header="Category" Width="150" DisplayMemberBinding="{Binding CategoryTitle}"/>
                         <GridViewColumn Header="Downloads" Width="90" DisplayMemberBinding="{Binding DownloadsText}"/>
                         <GridViewColumn Header="Last Updated" Width="100" DisplayMemberBinding="{Binding LastUpdatedText}"/>
-                        <GridViewColumn Header="" Width="100">
+                        <GridViewColumn Header="" Width="116">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Style="{StaticResource MarketplaceInstallButtonStyle}" Click="InstallRowButton_Click"/>
