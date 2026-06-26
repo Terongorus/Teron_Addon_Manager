@@ -1,4 +1,4 @@
-namespace Teron_Addon_Manager.Models
+namespace TeronAddonManager.Models
 {
     public sealed record ScannedAddonCandidate(
         List<string> FolderNames,

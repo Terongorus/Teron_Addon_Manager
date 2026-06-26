@@ -1,8 +1,8 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
-using Teron_Addon_Manager.Models;
+using TeronAddonManager.Models;
 
-namespace Teron_Addon_Manager.Sources
+namespace TeronAddonManager.Sources
 {
     public sealed class GitHubReleaseAddonSource : IAddonSource
     {

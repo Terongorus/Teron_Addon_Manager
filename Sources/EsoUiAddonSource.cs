@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Teron_Addon_Manager.Models;
+using TeronAddonManager.Models;
 
-namespace Teron_Addon_Manager.Sources
+namespace TeronAddonManager.Sources
 {
     public sealed class EsoUiAddonSource : IAddonSource
     {

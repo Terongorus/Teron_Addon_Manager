@@ -1,6 +1,6 @@
-using Teron_Addon_Manager.Models;
+using TeronAddonManager.Models;
 
-namespace Teron_Addon_Manager.Services
+namespace TeronAddonManager.Services
 {
     public static class AddonManifestParser
     {

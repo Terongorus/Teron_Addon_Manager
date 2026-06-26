@@ -1,7 +1,7 @@
 using System.Windows;
 using Brushes = System.Windows.Media.Brushes;
 
-namespace Teron_Addon_Manager
+namespace TeronAddonManager
 {
     public enum FluentMessageBoxIcon
     {

@@ -4,7 +4,7 @@ using MediaColor = System.Windows.Media.Color;
 using SolidColorBrush = System.Windows.Media.SolidColorBrush;
 using Brushes = System.Windows.Media.Brushes;
 
-namespace Teron_Addon_Manager.Helpers
+namespace TeronAddonManager.Helpers
 {
     // Status badge palette for the addon Status column. Light mode keeps the Excel-style
     // conditional-formatting pastels (pairs well with the default near-black inherited text); dark mode

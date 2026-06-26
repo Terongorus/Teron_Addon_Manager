@@ -2,13 +2,13 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Teron_Addon_Manager.Helpers;
-using Teron_Addon_Manager.Models;
-using Teron_Addon_Manager.Services;
-using Teron_Addon_Manager.Sources;
+using TeronAddonManager.Helpers;
+using TeronAddonManager.Models;
+using TeronAddonManager.Services;
+using TeronAddonManager.Sources;
 using Cursors = System.Windows.Input.Cursors;
 
-namespace Teron_Addon_Manager
+namespace TeronAddonManager
 {
     public partial class MarketplaceForm : Window
     {
@@ -111,7 +111,7 @@ namespace Teron_Addon_Manager
 
         // WPF's default Selector behavior has no way to get back to "nothing selected" once a row is
         // selected: clicking empty space leaves the old selection alone, and re-clicking the same row is a
-        // no-op. Both are handled explicitly here, matching Addon_Manager's addonListView.
+        // no-op. Both are handled explicitly here, matching AddonManager's addonListView.
         private void ResultsListView_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             var item = FindAncestor<System.Windows.Controls.ListViewItem>(e.OriginalSource as DependencyObject);

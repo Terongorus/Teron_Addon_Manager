@@ -1,8 +1,8 @@
 <Window
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:Teron_Addon_Manager.Helpers"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" x:Class="Teron_Addon_Manager.Addon_Manager"
+        xmlns:local="clr-namespace:TeronAddonManager.Helpers"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" x:Class="TeronAddonManager.AddonManager"
         Title="Teron Addon Manager"
         Width="900" Height="560"
         MinWidth="640" MinHeight="360">

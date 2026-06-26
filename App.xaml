@@ -1,8 +1,8 @@
-<Application x:Class="Teron_Addon_Manager.App"
+<Application x:Class="TeronAddonManager.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ThemeMode="System"
-             StartupUri="Views/Addon_Manager.xaml">
+             StartupUri="Views/AddonManager.xaml">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>

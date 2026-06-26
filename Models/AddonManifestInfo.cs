@@ -1,4 +1,4 @@
-namespace Teron_Addon_Manager.Models
+namespace TeronAddonManager.Models
 {
     public sealed record AddonManifestInfo(string? Title, string? Version, bool IsLibrary);
 }

@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 
-namespace Teron_Addon_Manager.Helpers
+namespace TeronAddonManager.Helpers
 {
     // WPF's ThemeMode has no public API to resolve "System" to the actual active Light/Dark theme,
     // so System mode falls back to reading the same registry value Windows itself uses for apps.

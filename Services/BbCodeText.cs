@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Teron_Addon_Manager.Services
+namespace TeronAddonManager.Services
 {
     public enum DescriptionSegmentKind
     {

@@ -2,15 +2,15 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Teron_Addon_Manager.Helpers;
-using Teron_Addon_Manager.Models;
-using Teron_Addon_Manager.Services;
-using Teron_Addon_Manager.Sources;
+using TeronAddonManager.Helpers;
+using TeronAddonManager.Models;
+using TeronAddonManager.Services;
+using TeronAddonManager.Sources;
 using Cursors = System.Windows.Input.Cursors;
 
-namespace Teron_Addon_Manager
+namespace TeronAddonManager
 {
-    public partial class Addon_Manager : Window
+    public partial class AddonManager : Window
     {
         private readonly HttpClient _http = new();
         private readonly AddonSourceResolver _resolver = new();
@@ -31,12 +31,12 @@ namespace Teron_Addon_Manager
 
         private readonly UiSettings _uiSettings = UiSettingsStore.Load();
 
-        public Addon_Manager()
+        public AddonManager()
         {
             InitializeComponent();
 
             WindowPlacementHelper.Apply(this, _uiSettings.AddonManagerWindow);
-            Closing += Addon_Manager_Closing;
+            Closing += AddonManager_Closing;
             StateChanged += (_, _) => UpdateSearchBoxWidth();
             UpdateSearchBoxWidth();
 
@@ -68,7 +68,7 @@ namespace Teron_Addon_Manager
             scanLocalButton.Click += ScanLocalButton_Click;
             browseMarketplaceButton.Click += BrowseMarketplaceButton_Click;
             openFolderButton.Click += OpenFolderButton_Click;
-            Loaded += Addon_Manager_Loaded;
+            Loaded += AddonManager_Loaded;
 
             addonListView.PreviewMouseRightButtonDown += AddonListView_PreviewMouseRightButtonDown;
             addonListView.PreviewMouseLeftButtonDown += AddonListView_PreviewMouseLeftButtonDown;
@@ -381,7 +381,7 @@ namespace Teron_Addon_Manager
             }
         }
 
-        private void Addon_Manager_Closing(object? sender, CancelEventArgs e)
+        private void AddonManager_Closing(object? sender, CancelEventArgs e)
         {
             _uiSettings.ThemeMode = ThemeMode.ToString();
             _uiSettings.AddonSortColumn = GetColumnName(_sortColumn);
@@ -398,7 +398,7 @@ namespace Teron_Addon_Manager
                 ? _availableTargets[targetListBox.SelectedIndex]
                 : GameTarget.Live;
 
-        private async void Addon_Manager_Loaded(object sender, RoutedEventArgs e)
+        private async void AddonManager_Loaded(object sender, RoutedEventArgs e)
         {
             _availableTargets = AddonPaths.DetectInstalledTargets().ToList();
             var rows = _availableTargets.Select(t => new GameTargetRow { DisplayName = DisplayName(t) }).ToList();

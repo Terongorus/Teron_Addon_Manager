@@ -4,7 +4,7 @@ using MediaColor = System.Windows.Media.Color;
 using SolidColorBrush = System.Windows.Media.SolidColorBrush;
 using Brushes = System.Windows.Media.Brushes;
 
-namespace Teron_Addon_Manager.Helpers
+namespace TeronAddonManager.Helpers
 {
     // Drives ListBoxItem/ListViewItem selection highlighting with a fixed, code-owned color instead of
     // Fluent's DynamicResource accent brushes. The DynamicResource+Trigger combo proved unreliable across

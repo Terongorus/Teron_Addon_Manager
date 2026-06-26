@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace Teron_Addon_Manager.Helpers
+namespace TeronAddonManager.Helpers
 {
     // Keeps a GridView's columns sized to fill the available width at all times, splitting it equally
     // across every column rather than relying on each column's own fixed Width.

@@ -1,8 +1,8 @@
 using System.Text.Json;
-using Teron_Addon_Manager.Models;
-using Teron_Addon_Manager.Sources;
+using TeronAddonManager.Models;
+using TeronAddonManager.Sources;
 
-namespace Teron_Addon_Manager.Services
+namespace TeronAddonManager.Services
 {
     public sealed class UpdateChecker
     {

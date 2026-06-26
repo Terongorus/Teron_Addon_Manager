@@ -1,7 +1,7 @@
 using System.Windows;
-using Teron_Addon_Manager.Models;
+using TeronAddonManager.Models;
 
-namespace Teron_Addon_Manager.Helpers
+namespace TeronAddonManager.Helpers
 {
     internal static class WindowPlacementHelper
     {

@@ -1,7 +1,7 @@
 using System.Windows;
-using Teron_Addon_Manager.Models;
+using TeronAddonManager.Models;
 
-namespace Teron_Addon_Manager
+namespace TeronAddonManager
 {
     public partial class ScanResultsDialog : Window
     {

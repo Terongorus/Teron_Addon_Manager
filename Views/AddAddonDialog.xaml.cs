@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace Teron_Addon_Manager
+namespace TeronAddonManager
 {
     public partial class AddAddonDialog : Window
     {

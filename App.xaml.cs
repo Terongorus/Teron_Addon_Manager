@@ -1,4 +1,4 @@
-namespace Teron_Addon_Manager
+namespace TeronAddonManager
 {
     public partial class App : System.Windows.Application
     {

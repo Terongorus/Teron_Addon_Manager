@@ -1,6 +1,6 @@
-using Teron_Addon_Manager.Models;
+using TeronAddonManager.Models;
 
-namespace Teron_Addon_Manager.Services
+namespace TeronAddonManager.Services
 {
     public static class AddonPaths
     {
@@ -10,7 +10,7 @@ namespace Teron_Addon_Manager.Services
 
         public static string AppDataFolder { get; } = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Teron_Addon_Manager");
+            "TeronAddonManager");
 
         public static string LibraryFilePath { get; } = Path.Combine(AppDataFolder, "addons.json");
 

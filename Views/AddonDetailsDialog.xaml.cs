@@ -4,14 +4,14 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Teron_Addon_Manager.Services;
+using TeronAddonManager.Services;
 using Brushes = System.Windows.Media.Brushes;
 using Cursors = System.Windows.Input.Cursors;
 using MediaColor = System.Windows.Media.Color;
 using MediaFontFamily = System.Windows.Media.FontFamily;
 using WpfImage = System.Windows.Controls.Image;
 
-namespace Teron_Addon_Manager
+namespace TeronAddonManager
 {
     public partial class AddonDetailsDialog : Window
     {

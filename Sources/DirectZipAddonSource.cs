@@ -1,6 +1,6 @@
-using Teron_Addon_Manager.Models;
+using TeronAddonManager.Models;
 
-namespace Teron_Addon_Manager.Sources
+namespace TeronAddonManager.Sources
 {
     /// <remarks>Unconditional fallback: handles any URL that no other source claims. Must be registered last.</remarks>
     public sealed class DirectZipAddonSource : IAddonSource

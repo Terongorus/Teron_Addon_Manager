@@ -1,6 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:local="clr-namespace:Teron_Addon_Manager.Helpers">
+                    xmlns:local="clr-namespace:TeronAddonManager.Helpers">
 
     <!-- Windows 11's modern UI font, falling back gracefully on Windows 10. -->
     <Style TargetType="{x:Type Window}">

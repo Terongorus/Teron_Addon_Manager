@@ -1,4 +1,4 @@
-<Window x:Class="Teron_Addon_Manager.AddonDetailsDialog"
+<Window x:Class="TeronAddonManager.AddonDetailsDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Addon Details"

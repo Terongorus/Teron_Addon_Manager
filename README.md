@@ -21,11 +21,11 @@ It currently focuses on [ESOUI](https://www.esoui.com/), with GitHub Releases an
 
 - Windows, with the [.NET 10 desktop runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (or build from source with the .NET 10 SDK).
 - Elder Scrolls Online installed, with its default Documents-folder save location (the game doesn't allow relocating the `AddOns` folder, so neither does this tool).
-- If you have **Controlled Folder Access** (Windows Security → Virus & threat protection → Ransomware protection) enabled, you'll need to allow `Teron_Addon_Manager.exe` through it — by default it blocks any app, including this one, from writing to your Documents folder.
+- If you have **Controlled Folder Access** (Windows Security → Virus & threat protection → Ransomware protection) enabled, you'll need to allow `TeronAddonManager.exe` through it — by default it blocks any app, including this one, from writing to your Documents folder.
 
 ## Getting started
 
-1. Build or download `Teron_Addon_Manager.exe` and run it.
+1. Build or download `TeronAddonManager.exe` and run it.
 2. Pick **ESO Live** or **ESO PTR** from the list on the left, depending on which install you want to manage.
 3. Add addons either by:
    - **Manual Add Addon...** — paste a link to an ESOUI page (e.g. `https://www.esoui.com/downloads/info4598-AnimatedActionBar.html`), a GitHub repo, or a direct `.zip` link.
@@ -33,7 +33,7 @@ It currently focuses on [ESOUI](https://www.esoui.com/), with GitHub Releases an
 4. If you already had addons installed manually, the app will offer to adopt them into tracking the first time it scans your `AddOns` folder.
 5. Use **Check for Updates**, **Update Selected**, and **Remove Selected** to manage what's tracked.
 
-Installed-addon metadata is stored in `%AppData%\Teron_Addon_Manager\addons.json`; nothing outside that file and the game's own `AddOns` folder is touched.
+Installed-addon metadata is stored in `%AppData%\TeronAddonManager\addons.json`; nothing outside that file and the game's own `AddOns` folder is touched.
 
 ## Building from source
 
