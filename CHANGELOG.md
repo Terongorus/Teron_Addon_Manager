@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow major.minor.hotfix (e.g. 1.2.3).
 
+## [2.6.0] - 2026-06-27
+
+### Added
+
+- An [Inno Setup](https://jrsoftware.org/isinfo.php) script (`Installer/TeronAddonManager.iss`)
+  that packages the self-contained publish output into a proper Windows installer: Start Menu
+  shortcuts, an optional desktop shortcut, a license page, and a normal uninstall entry in
+  "Apps & features".
+- Installer creation is wired directly into the publish pipeline via a `BuildInnoSetupInstaller`
+  MSBuild target (`AfterTargets="Publish"`) in the `.csproj`, so running
+  `dotnet publish -p:PublishProfile=win-x64` — or clicking **Publish** in Visual Studio with
+  that profile selected — builds, publishes, *and* produces
+  `bin\InstallerPackage\TeronAddonManagerSetup-x64.exe` in one step, replacing the previous raw
+  self-contained `.exe` releases. No separate tool invocation or manual script run is needed.
+  If Inno Setup isn't installed, the step is skipped with an MSBuild warning rather than
+  failing the publish.
+- The app version is passed from the `.csproj` into the installer script as a preprocessor
+  define, so the installer's version can't silently drift from the app's.
+
 ## [2.5.1] - 2026-06-27
 
 ### Changed
