@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow major.minor.hotfix (e.g. 1.2.3).
 
+## [2.5.1] - 2026-06-27
+
+### Changed
+
+- Converged the project's naming onto a single consistent identity: the
+  project file is now `TeronAddonManager.csproj`/`.slnx` (previously `Teron_Addon_Manager.*`),
+  the root namespace is explicitly `TeronAddonManager` (previously implicit and underscored),
+  and the main window class is `AddonManager` (previously `Addon_Manager`). The repo folder and
+  GitHub name (`Teron_Addon_Manager`) and the app's display name are unchanged.
+- The local settings folder moved from `%AppData%\Teron_Addon_Manager\` to
+  `%AppData%\TeronAddonManager\` to match the namespace rename above. **If you have an existing
+  install, its `addons.json`/`uisettings.json` won't be picked up automatically — copy that
+  folder over, or let the app start fresh.**
+- Default branch is now `release`, with `dev` as the standing development branch (previously
+  defaulted to `dev`); the stale, already-merged `master` branch was removed.
+
 ## [2.5.0] - 2026-06-23
 
 ### Changed
