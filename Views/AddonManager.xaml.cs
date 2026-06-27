@@ -34,13 +34,14 @@ namespace TeronAddonManager
         public AddonManager()
         {
             InitializeComponent();
+            Title = AppInfo.DisplayName;
 
             WindowPlacementHelper.Apply(this, _uiSettings.AddonManagerWindow);
             Closing += AddonManager_Closing;
             StateChanged += (_, _) => UpdateSearchBoxWidth();
             UpdateSearchBoxWidth();
 
-            _http.DefaultRequestHeaders.UserAgent.ParseAdd("Teron-Addon-Manager/1.0");
+            _http.DefaultRequestHeaders.UserAgent.ParseAdd("TeronAddonManager/1.0");
             _installer = new AddonInstaller(_http, _resolver);
             _updateChecker = new UpdateChecker(_http, _resolver);
 

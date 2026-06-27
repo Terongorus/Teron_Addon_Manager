@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow major.minor.hotfix (e.g. 1.2.3).
 
+## [2.6.1] - 2026-06-28
+
+### Changed
+
+- The main window title and the GitHub-release user agent string now read "TeronAddonManager"
+  consistently (the GitHub source's user agent had drifted to `Teron-Addon-Manager` with
+  hyphens). The window title is now read from the assembly's `<Product>` metadata at runtime
+  (`Services/AppInfo.cs`) instead of a hardcoded literal, so it can't drift from the project
+  file again.
+
 ## [2.6.0] - 2026-06-27
 
 ### Added

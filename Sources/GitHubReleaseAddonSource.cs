@@ -27,7 +27,7 @@ namespace TeronAddonManager.Sources
 
             var apiUrl = $"https://api.github.com/repos/{owner}/{repo}/releases/latest";
             using var request = new HttpRequestMessage(HttpMethod.Get, apiUrl);
-            request.Headers.UserAgent.Add(new ProductInfoHeaderValue("Teron-Addon-Manager", "1.0"));
+            request.Headers.UserAgent.Add(new ProductInfoHeaderValue("TeronAddonManager", "1.0"));
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
 
             using var response = await http.SendAsync(request, ct).ConfigureAwait(false);

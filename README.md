@@ -78,7 +78,7 @@ MSBuild target in `TeronAddonManager.csproj` for how it's wired into the publish
 
 ## Project status
 
-Version 2.6.0. See [CHANGELOG.md](CHANGELOG.md) for the full history. Versions follow `major.minor.hotfix`.
+Version 2.6.1. See [CHANGELOG.md](CHANGELOG.md) for the full history. Versions follow `major.minor.hotfix`.
 
 ## License
 
