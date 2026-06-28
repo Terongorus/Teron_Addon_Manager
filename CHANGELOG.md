@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow major.minor.hotfix (e.g. 1.2.3).
 
+## [2.8.0] - 2026-06-28
+
+### Added
+
+- Unhandled exceptions are now logged to `%LocalAppData%\TeronAddonManager\error.log` instead of
+  crashing with no record of what happened.
+- The app now refuses to run a second instance at once, showing a notice instead of opening a
+  second window that would race the first over `addons.json`.
+
 ## [2.7.0] - 2026-06-28
 
 ### Changed
