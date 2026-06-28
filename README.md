@@ -33,7 +33,7 @@ It currently focuses on [ESOUI](https://www.esoui.com/), with GitHub Releases an
 4. If you already had addons installed manually, the app will offer to adopt them into tracking the first time it scans your `AddOns` folder.
 5. Use **Check for Updates**, **Update Selected**, and **Remove Selected** to manage what's tracked.
 
-Installed-addon metadata is stored in `%AppData%\TeronAddonManager\addons.json`; nothing outside that file and the game's own `AddOns` folder is touched.
+Installed-addon metadata is stored in `%LocalAppData%\TeronAddonManager\addons.json`; nothing outside that file and the game's own `AddOns` folder is touched.
 
 ## Building from source
 
@@ -78,7 +78,7 @@ MSBuild target in `TeronAddonManager.csproj` for how it's wired into the publish
 
 ## Project status
 
-Version 2.6.0. See [CHANGELOG.md](CHANGELOG.md) for the full history. Versions follow `major.minor.hotfix`.
+Version 2.8.0. See [CHANGELOG.md](CHANGELOG.md) for the full history. Versions follow `major.minor.hotfix`.
 
 ## License
 

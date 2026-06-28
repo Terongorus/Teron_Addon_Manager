@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow major.minor.hotfix (e.g. 1.2.3).
 
+## [2.8.0] - 2026-06-28
+
+### Added
+
+- Unhandled exceptions are now logged to `%LocalAppData%\TeronAddonManager\error.log` instead of
+  crashing with no record of what happened.
+- The app now refuses to run a second instance at once, showing a notice instead of opening a
+  second window that would race the first over `addons.json`.
+
+## [2.7.0] - 2026-06-28
+
+### Changed
+
+- Settings/data folder moved from `%AppData%\TeronAddonManager\` (Roaming) to
+  `%LocalAppData%\TeronAddonManager\` (Local), matching the storage convention used across this
+  user's other apps — these are single-machine settings that shouldn't roam with the user
+  profile. **If you have an existing install, copy `addons.json` and `uisettings.json` from
+  `%AppData%\TeronAddonManager\` to `%LocalAppData%\TeronAddonManager\` (create the folder if
+  it doesn't exist yet) to keep your tracked addons and UI preferences.**
+
+## [2.6.2] - 2026-06-28
+
+### Changed
+
+- The main window title now also shows the app version, e.g. "Teron Addon Manager v2.6.2",
+  matching the title bar format used across this user's other apps. The version is read from
+  `AssemblyInformationalVersion` (sourced from `<Version>`) rather than `AssemblyVersion`,
+  since the CLR always pads the latter to four numeric parts regardless of what's written in
+  the project file - and `IncludeSourceRevisionInInformationalVersion` is now disabled, since
+  the SDK otherwise appends a `+<git-commit-sha>` suffix to that same value by default.
+
+## [2.6.1] - 2026-06-28
+
+### Changed
+
+- The main window title and the GitHub-release user agent string now read "TeronAddonManager"
+  consistently (the GitHub source's user agent had drifted to `Teron-Addon-Manager` with
+  hyphens). The window title is now read from the assembly's `<Product>` metadata at runtime
+  (`Services/AppInfo.cs`) instead of a hardcoded literal, so it can't drift from the project
+  file again.
+
 ## [2.6.0] - 2026-06-27
 
 ### Added
