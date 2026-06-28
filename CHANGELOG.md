@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow major.minor.hotfix (e.g. 1.2.3).
 
+## [2.7.0] - 2026-06-28
+
+### Changed
+
+- Settings/data folder moved from `%AppData%\TeronAddonManager\` (Roaming) to
+  `%LocalAppData%\TeronAddonManager\` (Local), matching the storage convention used across this
+  user's other apps — these are single-machine settings that shouldn't roam with the user
+  profile. **If you have an existing install, copy `addons.json` and `uisettings.json` from
+  `%AppData%\TeronAddonManager\` to `%LocalAppData%\TeronAddonManager\` (create the folder if
+  it doesn't exist yet) to keep your tracked addons and UI preferences.**
+
 ## [2.6.2] - 2026-06-28
 
 ### Changed

@@ -9,7 +9,7 @@ namespace TeronAddonManager.Services
             "Elder Scrolls Online");
 
         public static string AppDataFolder { get; } = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "TeronAddonManager");
 
         public static string LibraryFilePath { get; } = Path.Combine(AppDataFolder, "addons.json");
