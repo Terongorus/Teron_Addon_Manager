@@ -34,7 +34,7 @@ namespace TeronAddonManager
         public AddonManager()
         {
             InitializeComponent();
-            Title = AppInfo.DisplayName;
+            Title = AppInfo.DisplayNameWithVersion;
 
             WindowPlacementHelper.Apply(this, _uiSettings.AddonManagerWindow);
             Closing += AddonManager_Closing;

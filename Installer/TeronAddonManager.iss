@@ -16,7 +16,7 @@
 #endif
 
 #ifndef MyAppVersion
-  #define MyAppVersion "2.6.1"
+  #define MyAppVersion "2.6.2"
 #endif
 
 #define MyAppName "Teron Addon Manager"
