@@ -22,7 +22,7 @@
 #define MyAppName "Teron Addon Manager"
 #define MyAppPublisher "Teronverse"
 #define MyAppExeName "TeronAddonManager.exe"
-#define MyPublishDir "..\bin\Publish\TeronAddonManager_Win_" + Arch
+#define MyPublishDir "..\Build\Publish\TeronAddonManager\win-" + Arch
 
 [Setup]
 AppId={{F4D7F0AD-9049-4B38-86F2-A3F796CA6121}
