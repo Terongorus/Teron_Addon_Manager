@@ -19,6 +19,13 @@ namespace TeronAddonManager
                 LogException(args.Exception);
                 args.SetObserved();
             };
+            AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            {
+                if (args.ExceptionObject is Exception ex)
+                {
+                    LogException(ex);
+                }
+            };
 
             _singleInstanceMutex = new Mutex(true, "TeronAddonManager.SingleInstance", out bool createdNew);
             if (!createdNew)
